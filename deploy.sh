@@ -47,12 +47,21 @@ cmd_fresh() {
     info "Docker images build qilinmoqda..."
     $COMPOSE build --no-cache --parallel
 
-    info "MySQL ishga tushirilmoqda (tayyor bo'lishini kutish)..."
+    info "MySQL ishga tushirilmoqda..."
     $COMPOSE up -d db
+
+    info "MySQL tayyor bo'lishini kutish..."
+    until $COMPOSE exec -T db mysqladmin ping -h localhost -u root -p"${DB_ROOT_PASSWORD:-secret}" --silent 2>/dev/null; do
+        echo -n "."
+        sleep 2
+    done
+    echo ""
+    info "MySQL tayyor!"
 
     info "Konteynerlar ishga tushirilmoqda..."
     $COMPOSE up -d backend backend_nginx queue frontend
 
+    info "Backend tayyor bo'lishini kutish..."
     sleep 5
 
     info "Migratsiyalar ishga tushirilmoqda..."
@@ -85,7 +94,12 @@ cmd_update() {
     info "Konteynerlar yangilanmoqda..."
     $COMPOSE up -d --no-deps backend backend_nginx queue frontend
 
-    sleep 5
+    info "DB ga ulanishni tekshirish..."
+    until $COMPOSE exec -T db mysqladmin ping -h localhost -u root -p"${DB_ROOT_PASSWORD:-secret}" --silent 2>/dev/null; do
+        echo -n "."
+        sleep 2
+    done
+    echo ""
 
     info "Migratsiyalar..."
     $COMPOSE exec backend php artisan migrate --force
