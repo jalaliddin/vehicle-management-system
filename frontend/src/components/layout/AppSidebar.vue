@@ -89,9 +89,7 @@ async function logout() {
     <!-- Header -->
     <div class="sidebar-header" :class="{ 'rail-header': rail }">
       <div class="brand" :class="{ 'rail-brand': rail }">
-        <div class="brand-icon">
-          <v-icon color="white" size="20">mdi-truck-fast</v-icon>
-        </div>
+        <img src="/logo.svg" alt="UTG" :class="rail ? 'brand-logo-rail' : 'brand-logo'" />
         <div v-if="!rail" class="brand-text">
           <span class="brand-name">UTG Transport</span>
           <span class="brand-sub">Avtotransport tizimi</span>
@@ -175,12 +173,17 @@ async function logout() {
 .brand { display: flex; align-items: center; gap: 10px; overflow: hidden; }
 .rail-brand { flex-direction: column; align-items: center; }
 
-.brand-icon {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
-  display: flex; align-items: center; justify-content: center;
+.brand-logo {
+  height: 36px; width: auto;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+.brand-logo-rail {
+  height: 28px; width: auto;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
 }
 
 .brand-text { display: flex; flex-direction: column; overflow: hidden; }
