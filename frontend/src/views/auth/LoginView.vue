@@ -63,6 +63,7 @@ async function login() {
           <p>Hisobingizga kiring</p>
         </div>
 
+
         <div v-if="error" class="error-alert">
           <v-icon size="16" color="#DC2626">mdi-alert-circle</v-icon>
           {{ error }}
@@ -202,14 +203,14 @@ async function login() {
 .form-header { margin-bottom: 32px; }
 
 .form-logo {
-  height: 48px;
+  height: 80px;
   width: auto;
   display: block;
-  margin-bottom: 20px;
+  margin: 0 auto 24px;
 }
 
-.form-header h2 { font-size: 28px; font-weight: 800; color: #0F172A; margin: 0 0 6px; }
-.form-header p  { font-size: 14px; color: #94A3B8; margin: 0; }
+.form-header h2 { font-size: 28px; font-weight: 800; color: #0F172A; margin: 0 0 6px; text-align: center; }
+.form-header p  { font-size: 14px; color: #94A3B8; margin: 0; text-align: center; }
 
 .error-alert {
   display: flex; align-items: center; gap: 8px;
