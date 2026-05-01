@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\WaybillController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
 
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
+    Route::apiResource('users', UserController::class);
+    Route::post('/users/{user}/toggle-active', [UserController::class, 'toggleActive']);
 
     Route::apiResource('organizations', OrganizationController::class);
     Route::apiResource('vehicles', VehicleController::class);

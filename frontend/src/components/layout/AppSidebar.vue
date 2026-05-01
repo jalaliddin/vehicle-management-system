@@ -61,6 +61,7 @@ const sections = computed(() => {
       items: [
         { title: "Yoqilg'i me'yorlari", to: '/fuel-norms', icon: 'mdi-clipboard-list' },
         { title: 'Tashkilotlar', to: '/organizations', icon: 'mdi-domain' },
+        ...(role === 'superadmin' ? [{ title: 'Foydalanuvchilar', to: '/users', icon: 'mdi-account-group' }] : []),
       ],
     }] : []),
     {

@@ -38,6 +38,7 @@ const routes = [
       { path: 'organizations', name: 'organizations', component: () => import('@/views/organizations/OrganizationView.vue') },
       { path: 'fuel-norms', name: 'fuel-norms', component: () => import('@/views/FuelNormView.vue') },
       { path: 'reports', name: 'reports', component: () => import('@/views/reports/ReportsView.vue') },
+      { path: 'users', name: 'users', component: () => import('@/views/users/UsersView.vue') },
     ],
   },
 ]

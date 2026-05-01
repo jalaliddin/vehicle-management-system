@@ -90,6 +90,15 @@ export const fuelNormApi = {
   delete: (id) => api.delete(`/fuel-norms/${id}`),
 }
 
+export const userApi = {
+  list: (params) => api.get('/users', { params }),
+  create: (data) => api.post('/users', data),
+  show: (id) => api.get(`/users/${id}`),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  toggleActive: (id) => api.post(`/users/${id}/toggle-active`),
+}
+
 export const reportApi = {
   waybills: (params) => api.get('/reports/waybills', { params }),
   fuel: (params) => api.get('/reports/fuel', { params }),
