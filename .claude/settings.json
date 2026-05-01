@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql -u root -e \"SHOW DATABASES;\")",
+      "Bash(mysql -u root --password=root -e \"SHOW DATABASES;\")",
+      "Bash(mysql -u root --password=root -e \"CREATE DATABASE IF NOT EXISTS utg_transport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\")",
+      "Bash(composer require *)",
+      "Bash(php artisan *)",
+      "Bash(mysql -u root --password=root utg_transport -e \"SHOW TABLES;\")",
+      "Bash(vendor/bin/pint --dirty --format agent)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@utg.uz\",\"password\":\"password\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@utg.uz\",\"password\":\"password\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'Jami avtomobil: {d[\\\\\"total_vehicles\\\\\"]}, Haydovchilar: {d[\\\\\"total_drivers\\\\\"]}, Shahobchalar: {len\\(d[\\\\\"fuel_stations\\\\\"]\\)}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('PHP:', d['require']['php']\\); print\\('Laravel:', d['require']['laravel/framework']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Node deps:', list\\(d.get\\('dependencies',{}\\).keys\\(\\)\\)[:8]\\)\")",
+      "Bash(php --version)",
+      "Bash(chmod +x /home/eversoft/Projects/vms.utg.uz/deploy.sh)"
+    ]
+  }
+}
