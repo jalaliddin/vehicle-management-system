@@ -19,215 +19,439 @@ onMounted(async () => {
 const kpiCards = computed(() => {
   if (!stats.value) return []
   return [
-    { label: 'Jami Avtomobillar', value: stats.value.total_vehicles, icon: 'mdi-car-multiple', color: '#1565C0', sub: `${stats.value.active_vehicles} faol` },
-    { label: 'Haydovchilar', value: stats.value.total_drivers, icon: 'mdi-account-group-outline', color: '#2E7D32', sub: `${stats.value.active_drivers} faol` },
-    { label: "Bugungi Yo'l Varaqalari", value: stats.value.today_waybills, icon: 'mdi-file-document-outline', color: '#0288D1', sub: `${stats.value.pending_waybills} kutmoqda` },
-    { label: 'Nosoz Avtomobillar', value: stats.value.broken_vehicles, icon: 'mdi-car-wrench', color: '#C62828', sub: `${stats.value.maintenance_vehicles} ta'mirda` },
+    {
+      label: 'Jami Avtomobillar',
+      value: stats.value.total_vehicles,
+      sub: `${stats.value.active_vehicles} faol`,
+      badge: stats.value.broken_vehicles > 0 ? `${stats.value.broken_vehicles} nosoz` : null,
+      badgeColor: 'error',
+      icon: 'mdi-car',
+      gradient: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+      iconBg: 'rgba(255,255,255,0.15)',
+    },
+    {
+      label: 'Haydovchilar',
+      value: stats.value.total_drivers,
+      sub: `${stats.value.active_drivers} faol`,
+      badge: null,
+      icon: 'mdi-account-tie',
+      gradient: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+      iconBg: 'rgba(255,255,255,0.15)',
+    },
+    {
+      label: "Bugungi varaqalar",
+      value: stats.value.today_waybills,
+      sub: `${stats.value.pending_waybills} tekshiruvda`,
+      badge: stats.value.pending_waybills > 0 ? `${stats.value.pending_waybills} kutmoqda` : null,
+      badgeColor: 'warning',
+      icon: 'mdi-file-document-multiple',
+      gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+      iconBg: 'rgba(255,255,255,0.15)',
+    },
+    {
+      label: "Yo'ldagi transport",
+      value: stats.value.active_waybills,
+      sub: `${stats.value.maintenance_vehicles} ta'mirda`,
+      badge: null,
+      icon: 'mdi-map-marker-path',
+      gradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
+      iconBg: 'rgba(255,255,255,0.15)',
+    },
   ]
 })
 
-const statusLabel = (status) => {
-  const labels = {
-    draft: 'Yaratilgan', mechanic_check: 'Mexanik kutmoqda', mechanic_ok: 'Mexanik OK',
-    doctor_check: 'Shifokor kutmoqda', doctor_ok: 'Shifokor OK', hq_review: 'HQ ko\'rib chiqmoqda',
-    approved: 'Tasdiqlandi', in_progress: "Yo'lda", completed: 'Bajarildi', cancelled: 'Bekor',
-  }
-  return labels[status] || status
-}
+const statusLabel = (s) => ({
+  draft: 'Yaratilgan', mechanic_check: 'Mexanik', mechanic_ok: 'Mexanik ✓',
+  doctor_check: 'Shifokor', doctor_ok: 'Shifokor ✓', hq_review: 'HQ',
+  approved: 'Tasdiqlandi', in_progress: "Yo'lda", completed: 'Bajarildi', cancelled: 'Bekor',
+}[s] || s)
 
-const statusColor = (status) => {
-  const colors = {
-    draft: 'grey', mechanic_check: 'warning', doctor_check: 'warning', hq_review: 'warning',
-    mechanic_ok: 'info', doctor_ok: 'info', approved: 'success', in_progress: 'success',
-    completed: 'primary', cancelled: 'error',
-  }
-  return colors[status] || 'grey'
-}
+const statusColor = (s) => ({
+  draft: '#94A3B8', mechanic_check: '#F59E0B', mechanic_ok: '#3B82F6',
+  doctor_check: '#F59E0B', doctor_ok: '#3B82F6', hq_review: '#8B5CF6',
+  approved: '#10B981', in_progress: '#059669', completed: '#2563EB', cancelled: '#EF4444',
+}[s] || '#94A3B8')
 
-const fuelPct = (station) => {
-  if (!station.capacity) return 0
-  return Math.round((station.current_balance / station.capacity) * 100)
-}
+const statusBg = (s) => ({
+  draft: '#F1F5F9', mechanic_check: '#FEF3C7', mechanic_ok: '#DBEAFE',
+  doctor_check: '#FEF3C7', doctor_ok: '#DBEAFE', hq_review: '#EDE9FE',
+  approved: '#D1FAE5', in_progress: '#D1FAE5', completed: '#DBEAFE', cancelled: '#FEE2E2',
+}[s] || '#F1F5F9')
+
+const fuelPct = (s) => s.capacity ? Math.round((s.current_balance / s.capacity) * 100) : 0
+const fuelColor = (p) => p < 20 ? '#EF4444' : p < 50 ? '#F59E0B' : '#10B981'
+const fuelBg   = (p) => p < 20 ? '#FEE2E2' : p < 50 ? '#FEF3C7' : '#D1FAE5'
 </script>
 
 <template>
-  <v-container fluid class="pa-6">
-    <v-row v-if="loading">
-      <v-col v-for="i in 4" :key="i" cols="12" sm="6" md="3">
+  <div class="dashboard">
+
+    <!-- Skeleton -->
+    <div v-if="loading" class="p-grid">
+      <div v-for="i in 4" :key="i" class="p-grid-item">
         <v-skeleton-loader type="card" rounded="xl" />
-      </v-col>
-    </v-row>
+      </div>
+    </div>
 
     <template v-else-if="stats">
+
       <!-- KPI Cards -->
-      <v-row class="mb-5">
-        <v-col v-for="card in kpiCards" :key="card.label" cols="12" sm="6" md="3">
-          <v-card rounded="xl" class="kpi-card border pa-5">
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold" :style="`color:${card.color}`">{{ card.value }}</div>
-                <div class="text-body-2 text-medium-emphasis mt-1">{{ card.label }}</div>
-                <div class="text-caption mt-1" :style="`color:${card.color}`">{{ card.sub }}</div>
-              </div>
-              <v-avatar :color="card.color + '20'" size="56" rounded="xl">
-                <v-icon :color="card.color" size="28">{{ card.icon }}</v-icon>
-              </v-avatar>
+      <div class="kpi-row">
+        <div
+          v-for="card in kpiCards"
+          :key="card.label"
+          class="kpi-card"
+          :style="`background: ${card.gradient};`"
+        >
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-value">{{ card.value }}</div>
+              <div class="kpi-label">{{ card.label }}</div>
             </div>
-          </v-card>
-        </v-col>
-      </v-row>
+            <div class="kpi-icon" :style="`background: ${card.iconBg};`">
+              <v-icon color="white" size="22">{{ card.icon }}</v-icon>
+            </div>
+          </div>
+          <div class="kpi-bottom">
+            <span class="kpi-sub">{{ card.sub }}</span>
+            <span v-if="card.badge" class="kpi-badge">{{ card.badge }}</span>
+          </div>
+        </div>
+      </div>
 
-      <v-row>
-        <!-- Yo'ldagi avtomobillar -->
-        <v-col cols="12" md="5">
-          <v-card rounded="xl" class="border" height="100%">
-            <v-card-title class="pa-5 pb-2 d-flex align-center gap-2">
-              <v-icon color="success" size="20">mdi-map-marker-path</v-icon>
-              <span class="text-body-1 font-weight-semibold">Yo'lda bo'lgan avtomobillar</span>
-              <v-chip color="success" size="x-small" class="ml-auto">{{ stats.active_waybills_list?.length || 0 }}</v-chip>
-            </v-card-title>
-            <v-card-text class="pt-0">
-              <div v-if="!stats.active_waybills_list?.length" class="text-center py-6 text-medium-emphasis">
-                <v-icon size="40" color="grey-lighten-2">mdi-car-off</v-icon>
-                <p class="mt-2 text-caption">Hozir yo'lda hech kim yo'q</p>
+      <!-- Row 2 -->
+      <div class="content-row">
+
+        <!-- Active waybills -->
+        <div class="content-card" style="flex:0 0 340px;">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#DBEAFE;">
+              <v-icon color="#2563EB" size="18">mdi-car-arrow-right</v-icon>
+            </div>
+            <div>
+              <div class="card-title">Yo'ldagi transport</div>
+              <div class="card-sub">Hozir harakatdagi</div>
+            </div>
+            <div class="card-badge" style="background:#DBEAFE; color:#1D4ED8;">
+              {{ stats.active_waybills_list?.length || 0 }}
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div v-if="!stats.active_waybills_list?.length" class="empty-state">
+              <v-icon size="40" color="#CBD5E1">mdi-car-off</v-icon>
+              <p>Hozir yo'lda hech kim yo'q</p>
+            </div>
+            <div
+              v-for="wb in stats.active_waybills_list"
+              :key="wb.id"
+              class="list-row"
+              @click="router.push(`/waybills/${wb.id}`)"
+            >
+              <div class="list-icon" style="background:#D1FAE5;">
+                <v-icon color="#059669" size="16">mdi-car</v-icon>
               </div>
-              <v-list v-else density="compact">
-                <v-list-item
-                  v-for="wb in stats.active_waybills_list"
-                  :key="wb.id"
-                  :title="wb.vehicle?.state_number"
-                  :subtitle="`${wb.driver?.full_name} → ${wb.destination}`"
-                  rounded="lg"
-                  class="mb-1"
-                  style="background:#F5F7FA"
-                  @click="router.push(`/waybills/${wb.id}`)"
-                >
-                  <template #prepend>
-                    <v-avatar color="success" size="34" rounded="lg" class="mr-2">
-                      <v-icon color="white" size="16">mdi-car</v-icon>
-                    </v-avatar>
-                  </template>
-                  <template #append>
-                    <v-chip color="success" size="x-small">Yo'lda</v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
-        </v-col>
+              <div class="list-text">
+                <span class="list-primary">{{ wb.vehicle?.state_number }}</span>
+                <span class="list-secondary">{{ wb.driver?.full_name }}</span>
+              </div>
+              <v-icon size="14" color="#CBD5E1">mdi-chevron-right</v-icon>
+            </div>
+          </div>
+        </div>
 
-        <!-- Yoqilg'i holati -->
-        <v-col cols="12" md="7">
-          <v-card rounded="xl" class="border">
-            <v-card-title class="pa-5 pb-2 d-flex align-center gap-2">
-              <v-icon color="warning" size="20">mdi-fuel</v-icon>
-              <span class="text-body-1 font-weight-semibold">Yoqilg'i holati</span>
-              <v-btn variant="text" size="x-small" color="primary" class="ml-auto" @click="router.push('/fuel/monitoring')">
-                Barchasi <v-icon end size="14">mdi-arrow-right</v-icon>
-              </v-btn>
-            </v-card-title>
-            <v-card-text class="pt-0">
-              <v-row>
-                <v-col
-                  v-for="station in (stats.fuel_stations || []).slice(0, 6)"
-                  :key="station.id"
-                  cols="6" sm="4"
-                >
+        <!-- Fuel -->
+        <div class="content-card" style="flex:1;">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#FEF3C7;">
+              <v-icon color="#D97706" size="18">mdi-fuel</v-icon>
+            </div>
+            <div>
+              <div class="card-title">Yoqilg'i holati</div>
+              <div class="card-sub">Shahobchalar bo'yicha</div>
+            </div>
+            <button class="card-link" @click="router.push('/fuel/monitoring')">
+              Barchasi →
+            </button>
+          </div>
+
+          <div class="card-body">
+            <div class="fuel-grid">
+              <div
+                v-for="s in (stats.fuel_stations || []).slice(0, 6)"
+                :key="s.id"
+                class="fuel-item"
+                :style="`background: ${fuelBg(fuelPct(s))};`"
+              >
+                <div class="fuel-header">
+                  <span class="fuel-org">{{ s.organization?.short_name }}</span>
+                  <span class="fuel-pct" :style="`color: ${fuelColor(fuelPct(s))};`">{{ fuelPct(s) }}%</span>
+                </div>
+                <div class="fuel-bar-track">
                   <div
-                    class="rounded-lg pa-3"
-                    :style="`background:${fuelPct(station) < 20 ? '#FFEBEE' : fuelPct(station) < 50 ? '#FFF8E1' : '#F1F8E9'};`"
-                  >
-                    <div class="d-flex justify-space-between align-center mb-2">
-                      <span class="text-caption font-weight-bold" style="font-size:10px;">
-                        {{ station.organization?.short_name }}
-                      </span>
-                      <v-chip
-                        :color="fuelPct(station) < 20 ? 'error' : fuelPct(station) < 50 ? 'warning' : 'success'"
-                        size="x-small" variant="flat"
-                      >
-                        {{ fuelPct(station) }}%
-                      </v-chip>
-                    </div>
-                    <v-progress-linear
-                      :model-value="fuelPct(station)"
-                      :color="fuelPct(station) < 20 ? 'error' : fuelPct(station) < 50 ? 'warning' : 'success'"
-                      rounded height="6" bg-color="white"
-                    />
-                    <div class="text-caption text-medium-emphasis mt-1" style="font-size:10px;">
-                      {{ Number(station.current_balance).toLocaleString() }} L
-                    </div>
-                  </div>
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
-        </v-col>
+                    class="fuel-bar-fill"
+                    :style="`width:${fuelPct(s)}%; background:${fuelColor(fuelPct(s))};`"
+                  />
+                </div>
+                <div class="fuel-amount">{{ Number(s.current_balance).toLocaleString() }} L</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <!-- Oxirgi varaqalar -->
-        <v-col cols="12" md="6">
-          <v-card rounded="xl" class="border">
-            <v-card-title class="pa-5 pb-2 d-flex align-center gap-2">
-              <v-icon color="primary" size="20">mdi-file-clock-outline</v-icon>
-              <span class="text-body-1 font-weight-semibold">Oxirgi yo'l varaqalari</span>
-              <v-btn variant="text" size="x-small" color="primary" class="ml-auto" @click="router.push('/waybills')">
-                Barchasi <v-icon end size="14">mdi-arrow-right</v-icon>
-              </v-btn>
-            </v-card-title>
-            <v-card-text class="pt-0">
-              <v-list density="compact">
-                <v-list-item
+      <!-- Row 3 -->
+      <div class="content-row">
+
+        <!-- Recent waybills -->
+        <div class="content-card" style="flex:1;">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#EDE9FE;">
+              <v-icon color="#7C3AED" size="18">mdi-file-clock</v-icon>
+            </div>
+            <div>
+              <div class="card-title">Oxirgi yo'l varaqalari</div>
+              <div class="card-sub">Eng so'nggi faoliyat</div>
+            </div>
+            <button class="card-link" @click="router.push('/waybills')">
+              Barchasi →
+            </button>
+          </div>
+
+          <div class="card-body pa-0">
+            <div v-if="!stats.recent_waybills?.length" class="empty-state">
+              <v-icon size="40" color="#CBD5E1">mdi-file-outline</v-icon>
+              <p>Yo'l varaqalari mavjud emas</p>
+            </div>
+            <table v-else class="waybill-table">
+              <thead>
+                <tr>
+                  <th>Raqam</th>
+                  <th>Avtomobil</th>
+                  <th>Haydovchi</th>
+                  <th>Yo'nalish</th>
+                  <th>Holat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
                   v-for="wb in (stats.recent_waybills || []).slice(0, 8)"
                   :key="wb.id"
-                  rounded="lg"
-                  class="mb-1"
+                  class="waybill-row"
                   @click="router.push(`/waybills/${wb.id}`)"
                 >
-                  <template #prepend>
-                    <v-avatar :color="statusColor(wb.status)" size="8" class="mr-3" style="border-radius:50%;" />
-                  </template>
-                  <v-list-item-title class="text-body-2">{{ wb.waybill_number }}</v-list-item-title>
-                  <v-list-item-subtitle>{{ wb.driver?.full_name }} — {{ wb.vehicle?.state_number }}</v-list-item-subtitle>
-                  <template #append>
-                    <v-chip :color="statusColor(wb.status)" size="x-small" variant="tonal">
+                  <td><span class="waybill-num">{{ wb.waybill_number }}</span></td>
+                  <td>{{ wb.vehicle?.state_number || '—' }}</td>
+                  <td>{{ wb.driver?.full_name || '—' }}</td>
+                  <td>{{ wb.destination || '—' }}</td>
+                  <td>
+                    <span
+                      class="status-pill"
+                      :style="`background:${statusBg(wb.status)}; color:${statusColor(wb.status)};`"
+                    >
                       {{ statusLabel(wb.status) }}
-                    </v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
-        </v-col>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-        <!-- Tashkilotlar kesimida -->
-        <v-col cols="12" md="6">
-          <v-card rounded="xl" class="border">
-            <v-card-title class="pa-5 pb-2 d-flex align-center gap-2">
-              <v-icon color="error" size="20">mdi-car-wrench</v-icon>
-              <span class="text-body-1 font-weight-semibold">Nosoz avtomobillar</span>
-            </v-card-title>
-            <v-card-text class="pt-0">
-              <v-list density="compact">
-                <v-list-item
-                  v-for="org in (stats.vehicles_by_org || []).filter(o => o.broken_vehicles_count > 0)"
-                  :key="org.id"
-                  rounded="lg"
-                >
-                  <v-list-item-title class="text-body-2">{{ org.short_name || org.name }}</v-list-item-title>
-                  <v-list-item-subtitle>{{ org.vehicles_count }} ta jami avtomobil</v-list-item-subtitle>
-                  <template #append>
-                    <v-chip color="error" size="small" variant="flat">
-                      {{ org.broken_vehicles_count }} nosoz
-                    </v-chip>
-                  </template>
-                </v-list-item>
-                <div v-if="!(stats.vehicles_by_org || []).filter(o => o.broken_vehicles_count > 0).length" class="text-center py-4 text-success text-caption">
-                  <v-icon color="success">mdi-check-circle</v-icon> Hamma avtomobil ishlamoqda
-                </div>
-              </v-list>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+        <!-- Broken vehicles -->
+        <div class="content-card" style="flex:0 0 300px;">
+          <div class="card-header">
+            <div class="card-header-icon" style="background:#FEE2E2;">
+              <v-icon color="#DC2626" size="18">mdi-car-wrench</v-icon>
+            </div>
+            <div>
+              <div class="card-title">Nosoz avtomobillar</div>
+              <div class="card-sub">Tashkilotlar kesimida</div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div
+              v-if="!(stats.vehicles_by_org || []).filter(o => o.broken_vehicles_count > 0).length"
+              class="empty-state"
+            >
+              <v-icon size="40" color="#10B981">mdi-check-circle</v-icon>
+              <p style="color:#10B981;">Barcha avtomobillar ishlamoqda</p>
+            </div>
+            <div
+              v-for="org in (stats.vehicles_by_org || []).filter(o => o.broken_vehicles_count > 0)"
+              :key="org.id"
+              class="list-row"
+            >
+              <div class="list-text">
+                <span class="list-primary">{{ org.short_name || org.name }}</span>
+                <span class="list-secondary">{{ org.vehicles_count }} ta jami</span>
+              </div>
+              <div class="broken-badge">
+                <v-icon size="12" color="#DC2626">mdi-alert-circle</v-icon>
+                {{ org.broken_vehicles_count }} nosoz
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </template>
-  </v-container>
+  </div>
 </template>
+
+<style scoped>
+.dashboard {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100%;
+}
+
+/* KPI */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .kpi-row { grid-template-columns: 1fr; } }
+
+.kpi-card {
+  border-radius: 16px;
+  padding: 20px;
+  cursor: default;
+  transition: transform 0.18s, box-shadow 0.18s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+.kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,0,0,0.18); }
+
+.kpi-top  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.kpi-value { font-size: 42px; font-weight: 800; color: white; line-height: 1; letter-spacing: -1px; }
+.kpi-label { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); margin-top: 4px; }
+.kpi-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.kpi-bottom { display: flex; align-items: center; justify-content: space-between; }
+.kpi-sub { font-size: 12px; color: rgba(255,255,255,0.65); }
+.kpi-badge {
+  font-size: 11px; font-weight: 600; padding: 3px 8px;
+  background: rgba(255,255,255,0.2); border-radius: 6px; color: white;
+}
+
+/* Content rows */
+.content-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+@media (max-width: 960px) { .content-row { flex-direction: column; } .content-row > * { flex: 1 1 auto !important; } }
+
+.content-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* Card header */
+.card-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.card-header-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-title { font-size: 14px; font-weight: 700; color: #0F172A; }
+.card-sub   { font-size: 11px; color: #94A3B8; margin-top: 1px; }
+.card-badge {
+  margin-left: auto; font-size: 13px; font-weight: 700;
+  padding: 4px 10px; border-radius: 8px;
+}
+.card-link {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; color: #2563EB;
+  padding: 6px 10px; border-radius: 8px; transition: background 0.15s;
+}
+.card-link:hover { background: #EFF6FF; }
+
+.card-body { padding: 12px 16px; }
+.pa-0 { padding: 0 !important; }
+
+/* List rows */
+.list-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 6px; border-radius: 10px;
+  cursor: pointer; transition: background 0.12s;
+}
+.list-row:hover { background: #F8FAFC; }
+
+.list-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.list-text { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.list-primary   { font-size: 13px; font-weight: 600; color: #0F172A; }
+.list-secondary { font-size: 11px; color: #94A3B8; }
+
+/* Fuel */
+.fuel-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+@media (max-width: 700px) { .fuel-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.fuel-item { border-radius: 12px; padding: 12px; }
+.fuel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.fuel-org  { font-size: 11px; font-weight: 700; color: #334155; }
+.fuel-pct  { font-size: 12px; font-weight: 800; }
+.fuel-bar-track {
+  height: 6px; border-radius: 99px;
+  background: rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 6px;
+}
+.fuel-bar-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+.fuel-amount { font-size: 10px; color: #64748B; }
+
+/* Waybill table */
+.waybill-table { width: 100%; border-collapse: collapse; }
+.waybill-table th {
+  font-size: 11px; font-weight: 700; color: #94A3B8;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 10px 16px; text-align: left;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: #FAFAFA;
+}
+.waybill-row { cursor: pointer; transition: background 0.12s; }
+.waybill-row:hover { background: #F8FAFC; }
+.waybill-row td {
+  font-size: 13px; color: #334155;
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.waybill-row:last-child td { border-bottom: none; }
+.waybill-num { font-weight: 700; color: #2563EB; }
+
+.status-pill {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+}
+
+.broken-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 700; color: #DC2626;
+  background: #FEE2E2; padding: 4px 10px; border-radius: 8px;
+  flex-shrink: 0; white-space: nowrap;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 32px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.empty-state p { font-size: 13px; color: #94A3B8; margin: 0; }
+</style>

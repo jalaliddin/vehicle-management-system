@@ -7,7 +7,7 @@ import AppHeader from './AppHeader.vue'
   <v-app>
     <AppSidebar />
     <AppHeader />
-    <v-main style="background: #F5F7FA;">
+    <v-main style="background: #F1F5F9;">
       <RouterView />
     </v-main>
   </v-app>
