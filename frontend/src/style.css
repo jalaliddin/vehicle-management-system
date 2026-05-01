@@ -36,3 +36,28 @@ html, body {
 
 /* Remove vuetify data table border */
 .v-table { background: transparent !important; }
+
+/* ============ PRINT ============ */
+@media print {
+  /* Hide sidebar, header, nav */
+  .v-navigation-drawer,
+  .v-app-bar,
+  .v-toolbar,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* Reset main content area to full width */
+  .v-main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .v-main__wrap {
+    padding: 0 !important;
+  }
+
+  body, #app, .v-application, .v-application__wrap {
+    background: white !important;
+  }
+}
