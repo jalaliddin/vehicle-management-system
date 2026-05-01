@@ -30,13 +30,7 @@ async function login() {
     <!-- Left panel -->
     <div class="login-left">
       <div class="login-brand">
-        <div class="brand-logo">
-          <v-icon color="white" size="32">mdi-truck-fast</v-icon>
-        </div>
-        <div>
-          <div class="brand-name">UTG Transport</div>
-          <div class="brand-tagline">Avtotransport Boshqaruv Tizimi</div>
-        </div>
+        <img src="/logo.svg" alt="UTG Logo" class="brand-svg-logo" />
       </div>
 
       <div class="login-hero">
@@ -64,6 +58,7 @@ async function login() {
     <div class="login-right">
       <div class="login-form-wrap">
         <div class="form-header">
+          <img src="/logo.svg" alt="UTG Logo" class="form-logo" />
           <h2>Tizimga kirish</h2>
           <p>Hisobingizga kiring</p>
         </div>
@@ -164,15 +159,14 @@ async function login() {
   pointer-events: none;
 }
 
-.login-brand { display: flex; align-items: center; gap: 14px; }
-.brand-logo {
-  width: 52px; height: 52px; border-radius: 14px;
-  background: linear-gradient(135deg, #2563EB, #7C3AED);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+.login-brand { display: flex; align-items: center; }
+
+.brand-svg-logo {
+  height: 56px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.95;
 }
-.brand-name { font-size: 18px; font-weight: 800; color: white; }
-.brand-tagline { font-size: 12px; color: #64748B; margin-top: 2px; }
 
 .login-hero { flex: 1; }
 .login-hero h1 {
@@ -206,6 +200,14 @@ async function login() {
 .login-form-wrap { width: 100%; max-width: 360px; }
 
 .form-header { margin-bottom: 32px; }
+
+.form-logo {
+  height: 48px;
+  width: auto;
+  display: block;
+  margin-bottom: 20px;
+}
+
 .form-header h2 { font-size: 28px; font-weight: 800; color: #0F172A; margin: 0 0 6px; }
 .form-header p  { font-size: 14px; color: #94A3B8; margin: 0; }
 
