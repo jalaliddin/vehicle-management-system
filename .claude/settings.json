@@ -20,7 +20,8 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Node deps:', list\\(d.get\\('dependencies',{}\\).keys\\(\\)\\)[:8]\\)\")",
       "Bash(php --version)",
       "Bash(chmod +x /home/eversoft/Projects/vms.utg.uz/deploy.sh)",
-      "Bash(vendor/bin/pint app/Http/Controllers/Api/UserController.php --format agent)"
+      "Bash(vendor/bin/pint app/Http/Controllers/Api/UserController.php --format agent)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Api/WaybillController.php --format agent)"
     ]
   }
 }

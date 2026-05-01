@@ -34,8 +34,8 @@ async function login() {
       </div>
 
       <div class="login-hero">
-        <h1>Transport<br>boshqaruvini<br><span class="hero-accent">soddalashtiring</span></h1>
-        <p>Urganchtransgaz uchun yagona raqamli platforma — yo'l varaqalari, transport va yoqilg'i nazorati.</p>
+        <h1>Urganchtransgaz<br>UK Avtotransport va<br><span class="hero-accent">Maxsus Texnika Tizimi</span></h1>
+        <p>Yagona raqamli platforma — yo'l varaqalari, transport va yoqilg'i nazorati.</p>
       </div>
 
       <div class="login-features">

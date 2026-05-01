@@ -49,7 +49,7 @@ async function load() {
     const res = await waybillApi.show(route.params.id)
     waybill.value = res.data
     // Generate QR code
-    const qrText = `${window.location.origin}/waybills/${res.data.id}\nRaqam: ${res.data.waybill_number}\nHaydovchi: ${res.data.driver?.full_name || ''}\nAvtomobil: ${res.data.vehicle?.state_number || ''}`
+    const qrText = `${window.location.origin}/w/${res.data.id}`
     qrDataUrl.value = await QRCode.toDataURL(qrText, { width: 180, margin: 1, color: { dark: '#0F172A', light: '#FFFFFF' } })
   } finally {
     loading.value = false

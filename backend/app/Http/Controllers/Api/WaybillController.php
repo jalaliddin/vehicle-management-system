@@ -67,6 +67,39 @@ class WaybillController extends Controller
         ]));
     }
 
+    public function publicShow(Waybill $waybill): JsonResponse
+    {
+        return response()->json([
+            'waybill_number' => $waybill->waybill_number,
+            'status' => $waybill->status,
+            'created_date' => $waybill->created_date,
+            'destination' => $waybill->destination,
+            'planned_km' => $waybill->planned_km,
+            'actual_km' => $waybill->actual_km,
+            'fuel_issued' => $waybill->fuel_issued,
+            'fuel_consumed' => $waybill->fuel_consumed,
+            'mechanic_passed' => $waybill->mechanic_passed,
+            'mechanic_notes' => $waybill->mechanic_notes,
+            'doctor_passed' => $waybill->doctor_passed,
+            'doctor_notes' => $waybill->doctor_notes,
+            'organization' => $waybill->organization ? [
+                'name' => $waybill->organization->name,
+                'short_name' => $waybill->organization->short_name,
+            ] : null,
+            'vehicle' => $waybill->vehicle ? [
+                'state_number' => $waybill->vehicle->state_number,
+                'model' => $waybill->vehicle->model,
+                'fuel_type' => $waybill->vehicle->fuel_type,
+            ] : null,
+            'driver' => $waybill->driver ? [
+                'full_name' => $waybill->driver->full_name,
+                'license_category' => $waybill->driver->license_category,
+            ] : null,
+            'mechanic' => $waybill->mechanic?->name,
+            'doctor' => $waybill->doctor?->name,
+        ]);
+    }
+
     public function update(Request $request, Waybill $waybill): JsonResponse
     {
         $validated = $request->validate([
