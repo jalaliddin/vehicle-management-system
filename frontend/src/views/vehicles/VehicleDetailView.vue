@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { vehicleApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const route = useRoute()
 const vehicle = ref(null)
 const loading = ref(true)
@@ -37,7 +39,7 @@ onMounted(async () => {
             </div>
             <v-spacer />
             <v-chip :color="statusColor(vehicle.status)" variant="flat">{{ statusLabel(vehicle.status) }}</v-chip>
-            <v-btn icon variant="text" color="primary" @click="router.push(`/vehicles/${vehicle.id}/edit`)">
+            <v-btn v-if="auth.can('vehicles.update')" icon variant="text" color="primary" @click="router.push(`/vehicles/${vehicle.id}/edit`)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </div>

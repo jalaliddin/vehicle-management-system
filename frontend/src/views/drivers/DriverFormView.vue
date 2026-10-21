@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { driverApi, organizationApi, vehicleApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const route = useRoute()
 const isEdit = !!route.params.id
 const loading = ref(false)
@@ -57,8 +59,12 @@ function validate() {
 }
 
 async function load() {
-  const [orgsRes, vehRes] = await Promise.all([organizationApi.list(), vehicleApi.list()])
-  organizations.value = orgsRes.data
+  const [orgsRes, vehRes] = await Promise.all([
+    organizationApi.list(),
+    auth.can('vehicles.view') ? vehicleApi.list() : Promise.resolve({ data: [] }),
+  ])
+  organizations.value = auth.assignableOrganizations(orgsRes.data)
+  if (!isEdit && organizations.value.length === 1) form.value.organization_id = organizations.value[0].id
   vehicles.value = vehRes.data.filter(v => v.status === 'active')
   if (isEdit) {
     loading.value = true

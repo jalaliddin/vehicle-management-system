@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Enums\Permission;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::before(fn (User $user) => $user->isSuperAdmin() ? true : null);
+
+        foreach (Permission::cases() as $permission) {
+            Gate::define($permission->value, fn (User $user) => $user->hasPermission($permission));
+        }
+
+        Gate::define('access-organization', fn (User $user, ?int $organizationId) => $user->canAccessOrganization($organizationId));
     }
 }

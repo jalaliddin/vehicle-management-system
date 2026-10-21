@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { userApi, organizationApi } from '@/services/api'
+import { userApi, organizationApi, roleApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
 const users = ref([])
 const organizations = ref([])
+const roles = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -15,34 +18,69 @@ const deleteDialog = ref(false)
 const deletingUser = ref(null)
 const errors = ref({})
 
-const ROLES = [
-  { value: 'hq_dispatcher', label: 'Markaziy dispetcher', color: '#7C3AED', bg: '#F5F3FF', icon: 'mdi-office-building' },
-  { value: 'dispatcher',    label: 'Dispetcher',           color: '#2563EB', bg: '#EFF6FF', icon: 'mdi-headset' },
-  { value: 'mechanic',      label: 'Mexanik',              color: '#D97706', bg: '#FFFBEB', icon: 'mdi-wrench' },
-  { value: 'doctor',        label: 'Shifokor',             color: '#059669', bg: '#F0FDF4', icon: 'mdi-stethoscope' },
-  { value: 'viewer',        label: "Ko'ruvchi",            color: '#64748B', bg: '#F8FAFC', icon: 'mdi-eye' },
-]
+// Colors for the system roles; custom roles use the neutral fallback.
+const ROLE_STYLES = {
+  superadmin:    { color: '#DC2626', bg: '#FEF2F2', icon: 'mdi-shield-crown' },
+  hq_dispatcher: { color: '#7C3AED', bg: '#F5F3FF', icon: 'mdi-office-building' },
+  dispatcher:    { color: '#2563EB', bg: '#EFF6FF', icon: 'mdi-headset' },
+  mechanic:      { color: '#D97706', bg: '#FFFBEB', icon: 'mdi-wrench' },
+  doctor:        { color: '#059669', bg: '#F0FDF4', icon: 'mdi-stethoscope' },
+  viewer:        { color: '#64748B', bg: '#F8FAFC', icon: 'mdi-eye' },
+}
+const DEFAULT_ROLE_STYLE = { color: '#0891B2', bg: '#ECFEFF', icon: 'mdi-account-key' }
+
+const canManage = computed(() => auth.can('users.manage'))
 
 const emptyForm = () => ({
   name: '', email: '', password: '',
-  role: 'dispatcher', organization_id: '', is_active: true,
+  role_id: roles.value.find(r => r.slug === 'dispatcher')?.id ?? null,
+  organization_id: organizations.value.length === 1 ? organizations.value[0].id : '',
+  is_active: true,
 })
 const form = ref(emptyForm())
 
 onMounted(async () => {
-  const [u, o] = await Promise.all([userApi.list(), organizationApi.list()])
+  const [u, o, r] = await Promise.all([
+    userApi.list(),
+    organizationApi.list(),
+    canManage.value ? roleApi.list() : Promise.resolve({ data: [] }),
+  ])
   users.value = u.data
   organizations.value = o.data
+  roles.value = r.data
   loading.value = false
 })
+
+// A role can be handed out only if it grants nothing the current user lacks.
+function isAssignable(role) {
+  if (auth.isSuperAdmin) return true
+  if (!role || role.is_super_admin) return false
+  return role.permissions.every(p => auth.can(p))
+}
+
+const assignableRoles = computed(() => roles.value.filter(isAssignable))
+const formOrganizations = computed(() => auth.assignableOrganizations(organizations.value))
+
+// Role filter options come from the loaded users, so read-only viewers get them too.
+const roleOptions = computed(() => {
+  const map = new Map()
+  users.value.forEach(u => { if (u.role_id) map.set(u.role_id, u.role_name) })
+  return [...map].map(([id, name]) => ({ id, name }))
+})
+
+function canManageUser(user) {
+  if (!canManage.value) return false
+  if (auth.isSuperAdmin) return true
+  return user.role !== 'superadmin' && isAssignable(roles.value.find(r => r.id === user.role_id))
+}
 
 async function reload() {
   const res = await userApi.list()
   users.value = res.data
 }
 
-function roleMeta(role) {
-  return ROLES.find(r => r.value === role) || { label: role, color: '#64748B', bg: '#F8FAFC', icon: 'mdi-account' }
+function roleMeta(user) {
+  return { label: user.role_name || '—', ...(ROLE_STYLES[user.role] || DEFAULT_ROLE_STYLE) }
 }
 function orgName(id) {
   return organizations.value.find(o => o.id === id)?.short_name || '—'
@@ -51,7 +89,7 @@ function orgName(id) {
 const filtered = computed(() => {
   let list = users.value
   if (filterOrg.value) list = list.filter(u => u.organization_id == filterOrg.value)
-  if (filterRole.value) list = list.filter(u => u.role === filterRole.value)
+  if (filterRole.value) list = list.filter(u => u.role_id == filterRole.value)
   if (search.value) {
     const q = search.value.toLowerCase()
     list = list.filter(u =>
@@ -88,7 +126,7 @@ function openEdit(user) {
     name: user.name,
     email: user.email,
     password: '',
-    role: user.role,
+    role_id: user.role_id,
     organization_id: user.organization_id || '',
     is_active: user.is_active,
   }
@@ -116,6 +154,8 @@ async function save() {
       Object.entries(e.response.data.errors).forEach(([k, v]) => {
         errors.value[k] = v[0]
       })
+    } else {
+      errors.value.general = e.response?.data?.message || 'Xatolik yuz berdi'
     }
   } finally {
     saving.value = false
@@ -148,7 +188,7 @@ async function deleteUser() {
         <h1 class="page-title">Foydalanuvchilar</h1>
         <p class="page-sub">Tizim foydalanuvchilari va ruxsatlar boshqaruvi</p>
       </div>
-      <button class="create-btn" @click="openCreate">
+      <button v-if="canManage" class="create-btn" @click="openCreate">
         <v-icon size="16" color="white">mdi-plus</v-icon>
         Yangi foydalanuvchi
       </button>
@@ -171,7 +211,7 @@ async function deleteUser() {
         <v-icon size="15" color="#94A3B8">mdi-account-group</v-icon>
         <select v-model="filterRole" class="filter-select">
           <option value="">Barcha lavozimlar</option>
-          <option v-for="r in ROLES" :key="r.value" :value="r.value">{{ r.label }}</option>
+          <option v-for="r in roleOptions" :key="r.id" :value="r.id">{{ r.name }}</option>
         </select>
       </div>
 
@@ -221,8 +261,8 @@ async function deleteUser() {
           >
             <!-- Avatar + info -->
             <div class="card-top">
-              <div class="user-avatar" :style="`background: linear-gradient(135deg, ${roleMeta(user.role).color}22, ${roleMeta(user.role).color}44)`">
-                <v-icon size="22" :color="roleMeta(user.role).color">{{ roleMeta(user.role).icon }}</v-icon>
+              <div class="user-avatar" :style="`background: linear-gradient(135deg, ${roleMeta(user).color}22, ${roleMeta(user).color}44)`">
+                <v-icon size="22" :color="roleMeta(user).color">{{ roleMeta(user).icon }}</v-icon>
               </div>
               <div class="user-info">
                 <div class="user-name">{{ user.name }}</div>
@@ -234,15 +274,15 @@ async function deleteUser() {
             </div>
 
             <!-- Role badge -->
-            <div class="role-tag" :style="`background:${roleMeta(user.role).bg}; color:${roleMeta(user.role).color};`">
-              <v-icon size="11" :color="roleMeta(user.role).color">{{ roleMeta(user.role).icon }}</v-icon>
-              {{ roleMeta(user.role).label }}
+            <div class="role-tag" :style="`background:${roleMeta(user).bg}; color:${roleMeta(user).color};`">
+              <v-icon size="11" :color="roleMeta(user).color">{{ roleMeta(user).icon }}</v-icon>
+              {{ roleMeta(user).label }}
             </div>
 
             <!-- Footer -->
             <div class="card-footer">
               <span class="card-date">{{ user.created_at }}</span>
-              <div class="card-actions">
+              <div v-if="canManageUser(user)" class="card-actions">
                 <button class="icon-btn" title="Tahrirlash" @click="openEdit(user)">
                   <v-icon size="16" color="#64748B">mdi-pencil</v-icon>
                 </button>
@@ -282,6 +322,11 @@ async function deleteUser() {
         </div>
 
         <div class="modal-body">
+          <div v-if="errors.general" class="general-error">
+            <v-icon size="16" color="#DC2626">mdi-alert-circle</v-icon>
+            {{ errors.general }}
+          </div>
+
           <!-- Name -->
           <div class="field">
             <label>Ism Familiya <span class="req">*</span></label>
@@ -317,18 +362,19 @@ async function deleteUser() {
             <label>Lavozim <span class="req">*</span></label>
             <div class="role-picker">
               <button
-                v-for="r in ROLES"
-                :key="r.value"
+                v-for="r in assignableRoles"
+                :key="r.id"
                 class="role-option"
-                :class="{ 'role-selected': form.role === r.value }"
-                :style="form.role === r.value ? `background:${r.bg}; border-color:${r.color}; color:${r.color};` : ''"
-                @click="form.role = r.value"
+                :class="{ 'role-selected': form.role_id === r.id }"
+                :style="form.role_id === r.id ? `background:${roleMeta({ role: r.slug }).bg}; border-color:${roleMeta({ role: r.slug }).color}; color:${roleMeta({ role: r.slug }).color};` : ''"
+                @click="form.role_id = r.id"
                 type="button"
               >
-                <v-icon size="14" :color="form.role === r.value ? r.color : '#94A3B8'">{{ r.icon }}</v-icon>
-                {{ r.label }}
+                <v-icon size="14" :color="form.role_id === r.id ? roleMeta({ role: r.slug }).color : '#94A3B8'">{{ roleMeta({ role: r.slug }).icon }}</v-icon>
+                {{ r.name }}
               </button>
             </div>
+            <span v-if="errors.role_id" class="err-msg">{{ errors.role_id }}</span>
           </div>
 
           <!-- Organization -->
@@ -337,8 +383,8 @@ async function deleteUser() {
             <div class="input-wrap">
               <v-icon size="16" color="#94A3B8">mdi-office-building</v-icon>
               <select v-model="form.organization_id">
-                <option value="">— Tashkilotsiz —</option>
-                <option v-for="o in organizations" :key="o.id" :value="o.id">{{ o.name }}</option>
+                <option v-if="auth.canAccessAllOrganizations" value="">— Tashkilotsiz —</option>
+                <option v-for="o in formOrganizations" :key="o.id" :value="o.id">{{ o.name }}</option>
               </select>
             </div>
           </div>
@@ -592,6 +638,11 @@ async function deleteUser() {
 
 /* Role picker */
 .role-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.general-error {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: 10px;
+  background: #FEF2F2; color: #B91C1C; font-size: 13px;
+}
 .role-option {
   display: flex; align-items: center; gap: 5px;
   padding: 6px 12px; border-radius: 8px;

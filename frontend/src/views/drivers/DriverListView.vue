@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { driverApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const drivers = ref([])
 const loading = ref(true)
 const search = ref('')
@@ -42,7 +44,7 @@ onMounted(load)
         <h2 class="text-h6 font-weight-bold">Haydovchilar ro'yxati</h2>
       </v-col>
       <v-col cols="auto">
-        <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="router.push('/drivers/create')">
+        <v-btn v-if="auth.can('drivers.create')" color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="router.push('/drivers/create')">
           Yangi qo'shish
         </v-btn>
       </v-col>
@@ -74,7 +76,7 @@ onMounted(load)
             <v-chip :color="statusColor(item.status)" size="small" variant="flat">{{ statusLabel(item.status) }}</v-chip>
           </template>
           <template #item.actions="{ item }">
-            <v-btn icon size="small" variant="text" color="primary" @click="router.push(`/drivers/${item.id}/edit`)">
+            <v-btn v-if="auth.can('drivers.update')" icon size="small" variant="text" color="primary" @click="router.push(`/drivers/${item.id}/edit`)">
               <v-icon size="18">mdi-pencil</v-icon>
             </v-btn>
           </template>

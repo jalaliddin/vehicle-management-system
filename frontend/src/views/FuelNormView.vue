@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fuelNormApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const items = ref([])
 const loading = ref(true)
@@ -64,7 +67,7 @@ onMounted(load)
       <v-col>
         <h2 class="text-h6 font-weight-bold">Yoqilg'i Me'yorlari</h2>
       </v-col>
-      <v-col cols="auto">
+      <v-col v-if="auth.can('fuel_norms.manage')" cols="auto">
         <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="openCreate">Qo'shish</v-btn>
       </v-col>
     </v-row>
@@ -75,8 +78,10 @@ onMounted(load)
           <template #item.norm_without_ac="{ item }">{{ item.norm_without_ac }} L/100km</template>
           <template #item.norm_with_ac="{ item }">{{ item.norm_with_ac || '—' }} L/100km</template>
           <template #item.actions="{ item }">
-            <v-btn icon size="small" variant="text" color="primary" @click="openEdit(item)"><v-icon size="18">mdi-pencil</v-icon></v-btn>
-            <v-btn icon size="small" variant="text" color="error" @click="remove(item.id)"><v-icon size="18">mdi-delete</v-icon></v-btn>
+            <template v-if="auth.can('fuel_norms.manage')">
+              <v-btn icon size="small" variant="text" color="primary" @click="openEdit(item)"><v-icon size="18">mdi-pencil</v-icon></v-btn>
+              <v-btn icon size="small" variant="text" color="error" @click="remove(item.id)"><v-icon size="18">mdi-delete</v-icon></v-btn>
+            </template>
           </template>
         </v-data-table>
       </v-card-text>

@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fuelApi, organizationApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const stations = ref([])
 const organizations = ref([])
@@ -17,7 +20,8 @@ async function load() {
   loading.value = true
   const [sRes, oRes] = await Promise.all([fuelApi.stations(), organizationApi.list()])
   stations.value = sRes.data
-  organizations.value = oRes.data
+  organizations.value = auth.assignableOrganizations(oRes.data)
+  if (organizations.value.length === 1) form.value.organization_id = organizations.value[0].id
   loading.value = false
 }
 
@@ -62,7 +66,7 @@ onMounted(load)
       <v-col>
         <h2 class="text-h6 font-weight-bold">Yoqilg'i Shahobchalari</h2>
       </v-col>
-      <v-col cols="auto">
+      <v-col v-if="auth.can('fuel.stations.manage')" cols="auto">
         <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="createDialog = true">
           Yangi shahobcha
         </v-btn>
@@ -83,7 +87,7 @@ onMounted(load)
             </div>
           </template>
           <template #item.actions="{ item }">
-            <v-btn size="small" variant="flat" color="primary" rounded="lg" @click="selectedStation = item; txForm = { type: 'in', amount: '', notes: '' }; txDialog = true">
+            <v-btn v-if="auth.can('fuel.transactions.create')" size="small" variant="flat" color="primary" rounded="lg" @click="selectedStation = item; txForm = { type: 'in', amount: '', notes: '' }; txDialog = true">
               Kirim/Chiqim
             </v-btn>
           </template>

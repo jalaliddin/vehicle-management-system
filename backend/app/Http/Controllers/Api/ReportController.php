@@ -9,15 +9,18 @@ use App\Models\Vehicle;
 use App\Models\Waybill;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ReportController extends Controller
 {
     public function waybills(Request $request): JsonResponse
     {
+        Gate::authorize('reports.view');
+
         $user = $request->user();
 
         $data = Waybill::with(['organization:id,name,short_name', 'vehicle:id,state_number,model', 'driver:id,full_name'])
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->org_id, fn ($q) => $q->where('organization_id', $request->org_id))
             ->when($request->from, fn ($q) => $q->whereDate('created_date', '>=', $request->from))
             ->when($request->to, fn ($q) => $q->whereDate('created_date', '<=', $request->to))
@@ -36,13 +39,15 @@ class ReportController extends Controller
 
     public function fuel(Request $request): JsonResponse
     {
+        Gate::authorize('reports.view');
+
         $user = $request->user();
 
         $data = FuelTransaction::with([
             'fuelStation.organization:id,name,short_name',
             'vehicle:id,state_number',
         ])
-            ->when(! $user->isHqDispatcher(), function ($q) use ($user) {
+            ->when(! $user->canAccessAllOrganizations(), function ($q) use ($user) {
                 $q->whereHas('fuelStation', fn ($sq) => $sq->where('organization_id', $user->organization_id));
             })
             ->when($request->from, fn ($q) => $q->whereDate('created_at', '>=', $request->from))
@@ -58,10 +63,12 @@ class ReportController extends Controller
 
     public function vehicles(Request $request): JsonResponse
     {
+        Gate::authorize('reports.view');
+
         $user = $request->user();
 
         $data = Vehicle::with('organization:id,name,short_name')
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->org_id, fn ($q) => $q->where('organization_id', $request->org_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->get();
@@ -77,10 +84,12 @@ class ReportController extends Controller
 
     public function drivers(Request $request): JsonResponse
     {
+        Gate::authorize('reports.view');
+
         $user = $request->user();
 
         $data = Driver::with(['organization:id,name,short_name', 'vehicle:id,state_number'])
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->org_id, fn ($q) => $q->where('organization_id', $request->org_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->get();
@@ -94,10 +103,12 @@ class ReportController extends Controller
 
     public function fuelConsumption(Request $request): JsonResponse
     {
+        Gate::authorize('reports.view');
+
         $user = $request->user();
 
         $data = Waybill::with(['vehicle:id,state_number,model,fuel_norm', 'organization:id,short_name'])
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->org_id, fn ($q) => $q->where('organization_id', $request->org_id))
             ->when($request->from, fn ($q) => $q->whereDate('created_date', '>=', $request->from))
             ->when($request->to, fn ($q) => $q->whereDate('created_date', '<=', $request->to))

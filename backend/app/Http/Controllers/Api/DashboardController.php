@@ -16,13 +16,14 @@ class DashboardController extends Controller
     public function stats(Request $request): JsonResponse
     {
         $user = $request->user();
-        $orgId = $user->isHqDispatcher() ? null : $user->organization_id;
+        $scoped = ! $user->canAccessAllOrganizations();
+        $orgId = $user->organization_id;
 
         $vehicleQuery = Vehicle::query();
         $driverQuery = Driver::query();
         $waybillQuery = Waybill::query();
 
-        if ($orgId) {
+        if ($scoped) {
             $vehicleQuery->where('organization_id', $orgId);
             $driverQuery->where('organization_id', $orgId);
             $waybillQuery->where('organization_id', $orgId);
@@ -44,10 +45,10 @@ class DashboardController extends Controller
             'vehicles',
             'vehicles as active_vehicles_count' => fn ($q) => $q->where('status', 'active'),
             'vehicles as broken_vehicles_count' => fn ($q) => $q->where('status', 'broken'),
-        ])->when($orgId, fn ($q) => $q->where('id', $orgId))->get(['id', 'name', 'short_name']);
+        ])->when($scoped, fn ($q) => $q->where('id', $orgId))->get(['id', 'name', 'short_name']);
 
         $fuelStations = FuelStation::with('organization:id,name,short_name')
-            ->when($orgId, fn ($q) => $q->where('organization_id', $orgId))
+            ->when($scoped, fn ($q) => $q->where('organization_id', $orgId))
             ->get();
 
         $fuelAlerts = $fuelStations->filter(fn ($s) => $s->current_balance <= $s->min_threshold);

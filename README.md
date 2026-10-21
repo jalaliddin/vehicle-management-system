@@ -22,7 +22,7 @@
   - `Dispetcher → Mexanik → Shifokor → HQ → Yo'lga chiqdi → Yakunlandi`
 - ⛽ Yoqilg'i monitoring (real vaqtda qoldiq + ogohlantirishlar)
 - 📊 Hisobotlar (yo'l varaqalari, yoqilg'i sarfi, avtomobillar)
-- 🔐 Role asosidagi kirish huquqi (6 ta rol)
+- 🔐 Rollar va huquqlar (RBAC): rollarni admin paneldan yaratish va huquqlarini belgilash
 
 ---
 
@@ -226,6 +226,15 @@ POST   /api/fuel/stations/{id}/transaction
 GET    /api/fuel/transactions
 ```
 
+### Rollar va huquqlar
+```
+GET    /api/permissions                   # Huquqlar katalogi (guruhlangan)
+GET    /api/roles                         # users.manage yoki Super Admin
+POST   /api/roles                         # Faqat Super Admin
+PUT    /api/roles/{id}                    # Faqat Super Admin
+DELETE /api/roles/{id}                    # Faqat Super Admin, tizim rollari va foydalanuvchisi bor rollar o'chirilmaydi
+```
+
 ### Hisobotlar
 ```
 GET    /api/reports/waybills
@@ -239,11 +248,20 @@ GET    /api/reports/fuel-consumption
 
 ## 🔒 Rollar va huquqlar
 
-| Rol | Huquqlar |
+Rollar ma'lumotlar bazasida saqlanadi va Super Admin ularni **Boshqaruv → Rollar va huquqlar** sahifasida tahrirlaydi. Huquqlar ro'yxati kodda belgilangan (`backend/app/Enums/Permission.php`), har bir API so'rovi backendda tekshiriladi (Policy + Gate).
+
+- Har bir foydalanuvchida bitta rol bo'ladi.
+- `data.all_organizations` huquqi bo'lmagan rollar faqat o'z tashkiloti ma'lumotlari bilan ishlaydi.
+- Yo'l varaqasi amallari huquqdan tashqari varaqa holatiga ham bog'liq (masalan, faqat `doctor_ok` holatidagi varaqa tasdiqlanadi).
+- Foydalanuvchini boshqaruvchi faqat o'zida bor huquqlardan oshmaydigan rolni bera oladi.
+
+Boshlang'ich tizim rollari:
+
+| Rol | Standart huquqlar |
 |-----|----------|
-| `superadmin` | To'liq huquq, foydalanuvchilar boshqaruvi |
-| `hq_dispatcher` | Barcha tashkilotlar, tasdiqlash |
-| `dispatcher` | Faqat o'z tashkiloti, varaq yaratish |
+| `superadmin` | Barcha huquqlar, o'zgartirib bo'lmaydi |
+| `hq_dispatcher` | Barcha tashkilotlar, transport, varaqalarni tasdiqlash, yoqilg'i, tashkilotlar |
+| `dispatcher` | O'z tashkiloti, varaq yaratish, yuborish, yo'lga chiqarish, yakunlash |
 | `mechanic` | Mexanik tekshiruvi |
 | `doctor` | Shifokor tekshiruvi |
 | `viewer` | Faqat ko'rish |

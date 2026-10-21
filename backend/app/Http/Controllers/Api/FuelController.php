@@ -8,15 +8,19 @@ use App\Models\FuelTransaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class FuelController extends Controller
 {
     public function monitoring(Request $request): JsonResponse
     {
+        Gate::authorize('viewAny', FuelStation::class);
+
         $user = $request->user();
 
         $stations = FuelStation::with('organization:id,name,short_name')
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->get()
             ->map(function (FuelStation $station) {
                 return array_merge($station->toArray(), [
@@ -30,10 +34,12 @@ class FuelController extends Controller
 
     public function stationIndex(Request $request): JsonResponse
     {
+        Gate::authorize('viewAny', FuelStation::class);
+
         $user = $request->user();
 
         $stations = FuelStation::with('organization:id,name,short_name')
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->get()
             ->map(fn (FuelStation $s) => array_merge($s->toArray(), ['percentage' => $s->percentage]));
 
@@ -42,6 +48,8 @@ class FuelController extends Controller
 
     public function stationStore(Request $request): JsonResponse
     {
+        Gate::authorize('create', FuelStation::class);
+
         $validated = $request->validate([
             'organization_id' => ['required', 'exists:organizations,id'],
             'name' => ['required', 'string'],
@@ -51,6 +59,8 @@ class FuelController extends Controller
             'min_threshold' => ['numeric', 'min:0'],
         ]);
 
+        Gate::authorize('access-organization', [(int) $validated['organization_id']]);
+
         $station = FuelStation::create($validated);
 
         return response()->json($station->load('organization'), 201);
@@ -58,6 +68,8 @@ class FuelController extends Controller
 
     public function stationUpdate(Request $request, FuelStation $station): JsonResponse
     {
+        Gate::authorize('update', $station);
+
         $validated = $request->validate([
             'name' => ['string'],
             'fuel_type' => ['string'],
@@ -72,11 +84,13 @@ class FuelController extends Controller
 
     public function addTransaction(Request $request, FuelStation $station): JsonResponse
     {
+        Gate::authorize('addTransaction', $station);
+
         $validated = $request->validate([
             'type' => ['required', 'in:in,out'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'waybill_id' => ['nullable', 'exists:waybills,id'],
-            'vehicle_id' => ['nullable', 'exists:vehicles,id'],
+            'waybill_id' => ['nullable', Rule::exists('waybills', 'id')->where('organization_id', $station->organization_id)->withoutTrashed()],
+            'vehicle_id' => ['nullable', Rule::exists('vehicles', 'id')->where('organization_id', $station->organization_id)->withoutTrashed()],
             'price_per_liter' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -100,6 +114,8 @@ class FuelController extends Controller
 
     public function transactions(Request $request): JsonResponse
     {
+        Gate::authorize('viewAny', FuelStation::class);
+
         $user = $request->user();
 
         $transactions = FuelTransaction::with([
@@ -108,7 +124,7 @@ class FuelController extends Controller
             'waybill:id,waybill_number',
             'createdBy:id,name',
         ])
-            ->when(! $user->isHqDispatcher(), function ($q) use ($user) {
+            ->when(! $user->canAccessAllOrganizations(), function ($q) use ($user) {
                 $q->whereHas('fuelStation', fn ($sq) => $sq->where('organization_id', $user->organization_id));
             })
             ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))

@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { vehicleApi, organizationApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const route = useRoute()
 const isEdit = !!route.params.id
 const loading = ref(false)
@@ -64,7 +66,8 @@ function validate() {
 }
 
 async function load() {
-  organizations.value = (await organizationApi.list()).data
+  organizations.value = auth.assignableOrganizations((await organizationApi.list()).data)
+  if (!isEdit && organizations.value.length === 1) form.value.organization_id = organizations.value[0].id
   if (isEdit) {
     loading.value = true
     try {

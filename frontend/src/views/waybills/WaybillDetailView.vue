@@ -83,6 +83,11 @@ async function complete() {
   load()
 }
 
+// Same rules as the backend: a step needs its permission and a matching status.
+function allows(permission, statuses) {
+  return statuses.includes(waybill.value?.status) && auth.can(permission)
+}
+
 function openCheck(type, passed) {
   checkType.value = type; checkPassed.value = passed; checkNotes.value = ''; checkDialog.value = true
 }
@@ -143,11 +148,11 @@ onMounted(load)
 
         <!-- Action buttons (no print) -->
         <div class="action-bar no-print">
-          <button v-if="waybill.status === 'draft'"
+          <button v-if="allows('waybills.submit', ['draft'])"
             class="action-btn btn-primary" @click="submitToMechanic">
             <v-icon size="15">mdi-send</v-icon> Mexanikga yuborish
           </button>
-          <template v-if="waybill.status === 'mechanic_check' && auth.isMechanic">
+          <template v-if="allows('waybills.mechanic_check', ['mechanic_check'])">
             <button class="action-btn btn-success" @click="openCheck('mechanic', true)">
               <v-icon size="15">mdi-check</v-icon> Tasdiqlash
             </button>
@@ -155,19 +160,19 @@ onMounted(load)
               <v-icon size="15">mdi-close</v-icon> Rad etish
             </button>
           </template>
-          <button v-if="(waybill.status === 'mechanic_ok' || waybill.status === 'doctor_check') && auth.isDoctor"
+          <button v-if="allows('waybills.doctor_check', ['mechanic_ok', 'doctor_check'])"
             class="action-btn btn-info" @click="openCheck('doctor', true)">
             <v-icon size="15">mdi-stethoscope</v-icon> Shifokor: Tasdiqlash
           </button>
-          <button v-if="waybill.status === 'doctor_ok' && auth.isHqDispatcher"
+          <button v-if="allows('waybills.approve', ['doctor_ok', 'hq_review'])"
             class="action-btn btn-success" @click="approve">
             <v-icon size="15">mdi-check-all</v-icon> Tasdiqlash
           </button>
-          <button v-if="waybill.status === 'approved'"
+          <button v-if="allows('waybills.depart', ['approved'])"
             class="action-btn btn-primary" @click="depart">
             <v-icon size="15">mdi-car-arrow-right</v-icon> Yo'lga chiqdi
           </button>
-          <button v-if="waybill.status === 'in_progress'"
+          <button v-if="allows('waybills.complete', ['in_progress'])"
             class="action-btn btn-warning" @click="complete">
             <v-icon size="15">mdi-flag-checkered</v-icon> Yakunlash
           </button>

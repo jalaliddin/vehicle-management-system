@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Vehicle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class VehicleController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        Gate::authorize('viewAny', Vehicle::class);
+
         $user = $request->user();
 
         $query = Vehicle::with(['organization:id,name,short_name', 'driver:id,full_name,vehicle_id'])
-            ->when(! $user->isHqDispatcher(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->organization_id, fn ($q) => $q->where('organization_id', $request->organization_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->vehicle_type, fn ($q) => $q->where('vehicle_type', $request->vehicle_type))
@@ -28,6 +31,8 @@ class VehicleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        Gate::authorize('create', Vehicle::class);
+
         $validated = $request->validate([
             'organization_id' => ['required', 'exists:organizations,id'],
             'state_number' => ['required', 'string', 'unique:vehicles,state_number'],
@@ -51,6 +56,8 @@ class VehicleController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        Gate::authorize('access-organization', [(int) $validated['organization_id']]);
+
         $vehicle = Vehicle::create($validated);
 
         return response()->json($vehicle->load('organization'), 201);
@@ -58,11 +65,15 @@ class VehicleController extends Controller
 
     public function show(Vehicle $vehicle): JsonResponse
     {
+        Gate::authorize('view', $vehicle);
+
         return response()->json($vehicle->load(['organization', 'driver', 'waybills' => fn ($q) => $q->latest()->take(10)]));
     }
 
     public function update(Request $request, Vehicle $vehicle): JsonResponse
     {
+        Gate::authorize('update', $vehicle);
+
         $validated = $request->validate([
             'organization_id' => ['exists:organizations,id'],
             'state_number' => ['string', 'unique:vehicles,state_number,'.$vehicle->id],
@@ -86,6 +97,10 @@ class VehicleController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        if (isset($validated['organization_id'])) {
+            Gate::authorize('access-organization', [(int) $validated['organization_id']]);
+        }
+
         $vehicle->update($validated);
 
         return response()->json($vehicle->load('organization'));
@@ -93,6 +108,8 @@ class VehicleController extends Controller
 
     public function destroy(Vehicle $vehicle): JsonResponse
     {
+        Gate::authorize('delete', $vehicle);
+
         $vehicle->delete();
 
         return response()->json(null, 204);
@@ -100,6 +117,8 @@ class VehicleController extends Controller
 
     public function updateStatus(Request $request, Vehicle $vehicle): JsonResponse
     {
+        Gate::authorize('update', $vehicle);
+
         $request->validate([
             'status' => ['required', 'in:active,broken,maintenance,inactive'],
         ]);

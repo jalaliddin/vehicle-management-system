@@ -11,17 +11,10 @@ const userInitials = computed(() =>
   (authStore.user?.name || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 )
 
-const roleLabel = computed(() => ({
-  superadmin: 'Super Admin',
-  hq_dispatcher: 'Markaziy Dispetcher',
-  dispatcher: 'Dispetcher',
-  mechanic: 'Mexanik',
-  doctor: 'Shifokor',
-  viewer: "Ko'ruvchi",
-}[authStore.user?.role] || authStore.user?.role))
+const roleLabel = computed(() => authStore.user?.role_name || authStore.user?.role)
 
+// Each item lists the permission(s) it needs; sections left empty are hidden.
 const sections = computed(() => {
-  const role = authStore.user?.role
   const all = [
     {
       label: 'Asosiy',
@@ -32,46 +25,53 @@ const sections = computed(() => {
     {
       label: 'Transport',
       items: [
-        { title: 'Avtomobillar', to: '/vehicles', icon: 'mdi-car' },
-        { title: 'Haydovchilar', to: '/drivers', icon: 'mdi-account-tie' },
+        { title: 'Avtomobillar', to: '/vehicles', icon: 'mdi-car', permission: 'vehicles.view' },
+        { title: 'Haydovchilar', to: '/drivers', icon: 'mdi-account-tie', permission: 'drivers.view' },
       ],
     },
     {
       label: "Yo'l varaqalari",
       items: [
-        { title: "Varaqalar ro'yxati", to: '/waybills', icon: 'mdi-file-document-multiple' },
-        ...(['dispatcher', 'hq_dispatcher', 'superadmin'].includes(role)
-          ? [{ title: 'Yangi varaq', to: '/waybills/create', icon: 'mdi-plus-circle' }] : []),
-        ...(['mechanic', 'superadmin', 'hq_dispatcher'].includes(role)
-          ? [{ title: 'Mexanik navbati', to: '/waybills/mechanic', icon: 'mdi-wrench' }] : []),
-        ...(['doctor', 'superadmin', 'hq_dispatcher'].includes(role)
-          ? [{ title: 'Shifokor navbati', to: '/waybills/doctor', icon: 'mdi-stethoscope' }] : []),
+        { title: "Varaqalar ro'yxati", to: '/waybills', icon: 'mdi-file-document-multiple', permission: 'waybills.view' },
+        { title: 'Yangi varaq', to: '/waybills/create', icon: 'mdi-plus-circle', permission: 'waybills.create' },
+        { title: 'Mexanik navbati', to: '/waybills/mechanic', icon: 'mdi-wrench', permission: 'waybills.mechanic_check' },
+        { title: 'Shifokor navbati', to: '/waybills/doctor', icon: 'mdi-stethoscope', permission: 'waybills.doctor_check' },
       ],
     },
     {
       label: "Yoqilg'i",
       items: [
-        { title: 'Monitoring', to: '/fuel/monitoring', icon: 'mdi-gauge-full' },
-        { title: 'Shahobchalar', to: '/fuel/stations', icon: 'mdi-gas-station' },
-        { title: 'Harakatlar', to: '/fuel/transactions', icon: 'mdi-swap-horizontal-bold' },
+        { title: 'Monitoring', to: '/fuel/monitoring', icon: 'mdi-gauge-full', permission: 'fuel.view' },
+        { title: 'Shahobchalar', to: '/fuel/stations', icon: 'mdi-gas-station', permission: 'fuel.view' },
+        { title: 'Harakatlar', to: '/fuel/transactions', icon: 'mdi-swap-horizontal-bold', permission: 'fuel.view' },
       ],
     },
-    ...(['superadmin', 'hq_dispatcher'].includes(role) ? [{
+    {
       label: 'Boshqaruv',
       items: [
-        { title: "Yoqilg'i me'yorlari", to: '/fuel-norms', icon: 'mdi-clipboard-list' },
-        { title: 'Tashkilotlar', to: '/organizations', icon: 'mdi-domain' },
-        ...(role === 'superadmin' ? [{ title: 'Foydalanuvchilar', to: '/users', icon: 'mdi-account-group' }] : []),
+        { title: "Yoqilg'i me'yorlari", to: '/fuel-norms', icon: 'mdi-clipboard-list', permission: 'fuel_norms.view' },
+        { title: 'Tashkilotlar', to: '/organizations', icon: 'mdi-domain', permission: 'organizations.manage' },
+        { title: 'Foydalanuvchilar', to: '/users', icon: 'mdi-account-group', permission: ['users.view', 'users.manage'] },
+        { title: 'Rollar va huquqlar', to: '/roles', icon: 'mdi-shield-account', superAdmin: true },
       ],
-    }] : []),
+    },
     {
       label: 'Analitika',
       items: [
-        { title: 'Hisobotlar', to: '/reports', icon: 'mdi-chart-bar' },
+        { title: 'Hisobotlar', to: '/reports', icon: 'mdi-chart-bar', permission: 'reports.view' },
       ],
     },
   ]
+
+  const visible = (item) => {
+    if (item.superAdmin) return authStore.isSuperAdmin
+    if (!item.permission) return true
+    return authStore.canAny([item.permission].flat())
+  }
+
   return all
+    .map(section => ({ ...section, items: section.items.filter(visible) }))
+    .filter(section => section.items.length)
 })
 
 async function logout() {
@@ -112,12 +112,11 @@ async function logout() {
           :key="item.to"
           :to="item.to"
           custom
-          v-slot="{ isActive, navigate }"
-          :exact="item.exact"
+          v-slot="{ isActive, isExactActive, navigate }"
         >
           <button
             class="nav-item"
-            :class="{ active: isActive }"
+            :class="{ active: item.exact ? isExactActive : isActive }"
             @click="navigate"
           >
             <div class="nav-icon">

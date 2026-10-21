@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { driverApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const route = useRoute()
 const driver = ref(null)
 const loading = ref(true)
@@ -31,7 +33,7 @@ onMounted(async () => {
               <p class="text-medium-emphasis">{{ driver.organization?.name }}</p>
             </div>
             <v-spacer />
-            <v-btn icon variant="text" color="primary" @click="router.push(`/drivers/${driver.id}/edit`)">
+            <v-btn v-if="auth.can('drivers.update')" icon variant="text" color="primary" @click="router.push(`/drivers/${driver.id}/edit`)">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </div>

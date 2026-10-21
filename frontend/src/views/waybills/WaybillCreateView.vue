@@ -15,7 +15,7 @@ const vehicles = ref([])
 const drivers = ref([])
 const organizations = ref([])
 
-const isHq = computed(() => auth.isHqDispatcher)
+const isHq = computed(() => auth.canAccessAllOrganizations)
 
 const form = ref({
   organization_id: auth.user?.organization_id || null,

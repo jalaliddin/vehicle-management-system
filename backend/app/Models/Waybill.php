@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\WaybillFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +11,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Waybill extends Model
 {
-    use SoftDeletes;
+    /** @use HasFactory<WaybillFactory> */
+    use HasFactory, SoftDeletes;
+
+    /**
+     * The statuses each action may be taken from.
+     *
+     * @var array<string, list<string>>
+     */
+    public const ACTION_STATUSES = [
+        'update' => ['draft'],
+        'delete' => ['draft'],
+        'submit' => ['draft'],
+        'mechanicCheck' => ['mechanic_check'],
+        'doctorCheck' => ['mechanic_ok', 'doctor_check'],
+        'approve' => ['doctor_ok', 'hq_review'],
+        'depart' => ['approved'],
+        'complete' => ['in_progress'],
+        'saveRoute' => ['in_progress'],
+    ];
 
     protected $fillable = [
         'waybill_number',
@@ -77,6 +97,11 @@ class Waybill extends Model
             $count = static::whereYear('created_at', $year)->whereMonth('created_at', $month)->count() + 1;
             $waybill->waybill_number = "UTG-{$year}{$month}-".str_pad($count, 4, '0', STR_PAD_LEFT);
         });
+    }
+
+    public function allowsAction(string $action): bool
+    {
+        return in_array($this->status, self::ACTION_STATUSES[$action] ?? [], true);
     }
 
     public function organization(): BelongsTo

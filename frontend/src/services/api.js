@@ -99,6 +99,14 @@ export const userApi = {
   toggleActive: (id) => api.post(`/users/${id}/toggle-active`),
 }
 
+export const roleApi = {
+  list: () => api.get('/roles'),
+  permissions: () => api.get('/permissions'),
+  create: (data) => api.post('/roles', data),
+  update: (id, data) => api.put(`/roles/${id}`, data),
+  delete: (id) => api.delete(`/roles/${id}`),
+}
+
 export const reportApi = {
   waybills: (params) => api.get('/reports/waybills', { params }),
   fuel: (params) => api.get('/reports/fuel', { params }),

@@ -5,19 +5,40 @@ import { authApi } from '@/services/api'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
   const token = ref(localStorage.getItem('token') || null)
+  // Whether the cached user has been re-fetched this session, so role
+  // changes made by an admin apply without logging out.
+  const refreshed = ref(false)
 
   const isAuthenticated = computed(() => !!token.value)
   const isSuperAdmin = computed(() => user.value?.role === 'superadmin')
-  const isHqDispatcher = computed(() => ['superadmin', 'hq_dispatcher'].includes(user.value?.role))
-  const isMechanic = computed(() => user.value?.role === 'mechanic')
-  const isDoctor = computed(() => user.value?.role === 'doctor')
+  const permissions = computed(() => new Set(user.value?.permissions || []))
+  const canAccessAllOrganizations = computed(() => permissions.value.has('data.all_organizations'))
+
+  function can(permission) {
+    return permissions.value.has(permission)
+  }
+
+  function canAny(list) {
+    return list.some(can)
+  }
+
+  // The organizations the user may assign records to.
+  function assignableOrganizations(organizations) {
+    if (canAccessAllOrganizations.value) return organizations
+    return organizations.filter(o => o.id === user.value?.organization_id)
+  }
+
+  function setUser(data) {
+    user.value = data
+    refreshed.value = true
+    localStorage.setItem('user', JSON.stringify(data))
+  }
 
   async function login(email, password) {
     const res = await authApi.login({ email, password })
     token.value = res.data.token
-    user.value = res.data.user
     localStorage.setItem('token', res.data.token)
-    localStorage.setItem('user', JSON.stringify(res.data.user))
+    setUser(res.data.user)
   }
 
   async function logout() {
@@ -26,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       token.value = null
       user.value = null
+      refreshed.value = false
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     }
@@ -33,9 +55,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchMe() {
     const res = await authApi.me()
-    user.value = res.data
-    localStorage.setItem('user', JSON.stringify(res.data))
+    setUser(res.data)
   }
 
-  return { user, token, isAuthenticated, isSuperAdmin, isHqDispatcher, isMechanic, isDoctor, login, logout, fetchMe }
+  return {
+    user, token, refreshed, isAuthenticated, isSuperAdmin, permissions, canAccessAllOrganizations,
+    can, canAny, assignableOrganizations, login, logout, fetchMe,
+  }
 })

@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { vehicleApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const vehicles = ref([])
 const loading = ref(true)
 const search = ref('')
@@ -60,7 +62,7 @@ onMounted(load)
         <p class="text-medium-emphasis text-body-2">Barcha tashkilotlar avtomobillari</p>
       </v-col>
       <v-col cols="auto">
-        <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="router.push('/vehicles/create')">
+        <v-btn v-if="auth.can('vehicles.create')" color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="router.push('/vehicles/create')">
           Yangi qo'shish
         </v-btn>
       </v-col>
@@ -116,10 +118,10 @@ onMounted(load)
             </v-chip>
           </template>
           <template #item.actions="{ item }">
-            <v-btn icon size="small" variant="text" color="primary" @click="router.push(`/vehicles/${item.id}/edit`)">
+            <v-btn v-if="auth.can('vehicles.update')" icon size="small" variant="text" color="primary" @click="router.push(`/vehicles/${item.id}/edit`)">
               <v-icon size="18">mdi-pencil</v-icon>
             </v-btn>
-            <v-btn icon size="small" variant="text" color="error" @click="selectedVehicle = item; deleteDialog = true">
+            <v-btn v-if="auth.can('vehicles.delete')" icon size="small" variant="text" color="error" @click="selectedVehicle = item; deleteDialog = true">
               <v-icon size="18">mdi-delete</v-icon>
             </v-btn>
           </template>

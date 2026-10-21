@@ -18,7 +18,7 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        $user = User::with('organization')->where('email', $request->email)->first();
+        $user = User::with(['organization', 'role.permissions'])->where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -47,7 +47,7 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($this->formatUser($request->user()->load('organization')));
+        return response()->json($this->formatUser($request->user()->load(['organization', 'role.permissions'])));
     }
 
     private function formatUser(User $user): array
@@ -56,7 +56,10 @@ class AuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->role,
+            'role' => $user->role?->slug,
+            'role_id' => $user->role_id,
+            'role_name' => $user->role?->name,
+            'permissions' => $user->permissionKeys(),
             'is_active' => $user->is_active,
             'organization_id' => $user->organization_id,
             'organization' => $user->organization,

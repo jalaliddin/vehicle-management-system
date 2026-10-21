@@ -66,7 +66,7 @@ onMounted(load)
       <v-col>
         <h2 class="text-h6 font-weight-bold">Yo'l varaqalari</h2>
       </v-col>
-      <v-col cols="auto" v-if="!auth.isMechanic && !auth.isDoctor">
+      <v-col cols="auto" v-if="auth.can('waybills.create')">
         <v-btn color="primary" variant="flat" rounded="lg" prepend-icon="mdi-plus" @click="router.push('/waybills/create')">
           Yangi varaq
         </v-btn>

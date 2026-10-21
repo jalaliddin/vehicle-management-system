@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Permission;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,7 @@ class User extends Authenticatable
         'email',
         'password',
         'organization_id',
-        'role',
+        'role_id',
         'is_active',
     ];
 
@@ -55,22 +56,57 @@ class User extends Authenticatable
         return $this->hasMany(Waybill::class, 'approved_by');
     }
 
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'superadmin';
+        return $this->role?->isSuperAdmin() ?? false;
     }
 
-    public function isHqDispatcher(): bool
+    /**
+     * @return list<string>
+     */
+    public function permissionKeys(): array
     {
-        return in_array($this->role, ['superadmin', 'hq_dispatcher']);
+        return $this->role?->permissionKeys() ?? [];
     }
 
-    public function canManageOrganization(?int $organizationId): bool
+    public function hasPermission(Permission $permission): bool
     {
-        if ($this->isSuperAdmin() || $this->isHqDispatcher()) {
+        return in_array($permission->value, $this->permissionKeys(), true);
+    }
+
+    /**
+     * Whether every permission of the given role is also held by this user, so they
+     * can hand it out without granting more than they have.
+     */
+    public function holdsAllPermissionsOf(Role $role): bool
+    {
+        if ($role->isSuperAdmin()) {
+            return $this->isSuperAdmin();
+        }
+
+        return array_diff($role->permissionKeys(), $this->permissionKeys()) === [];
+    }
+
+    public function canAccessAllOrganizations(): bool
+    {
+        return $this->hasPermission(Permission::AllOrganizations);
+    }
+
+    /**
+     * Users without the all-organizations permission are limited to records
+     * of their own organization.
+     */
+    public function canAccessOrganization(?int $organizationId): bool
+    {
+        if ($this->canAccessAllOrganizations()) {
             return true;
         }
 
-        return $this->organization_id === $organizationId;
+        return $organizationId !== null && (int) $this->organization_id === $organizationId;
     }
 }
