@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use Carbon\CarbonInterface;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -126,6 +127,23 @@ class Employee extends Model
     public function events(): HasMany
     {
         return $this->hasMany(EmploymentEvent::class);
+    }
+
+    public function absences(): HasMany
+    {
+        return $this->hasMany(EmployeeAbsence::class);
+    }
+
+    /**
+     * Whether an actual (not planned) absence covers the date.
+     */
+    public function isAbsentOn(CarbonInterface $date): bool
+    {
+        return $this->absences()
+            ->where('is_planned', false)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->exists();
     }
 
     /**

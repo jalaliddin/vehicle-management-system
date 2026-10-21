@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AbsenceController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
@@ -85,6 +86,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('history', [EmployeeController::class, 'history']);
         Route::get('events', [EmploymentEventController::class, 'index']);
         Route::post('events', [EmploymentEventController::class, 'store']);
+        Route::get('absences', [AbsenceController::class, 'index']);
+        Route::post('absences', [AbsenceController::class, 'store']);
+        Route::get('leave-balance', [AbsenceController::class, 'leaveBalance']);
     });
     Route::post('employment-events/{event}/cancel', [EmploymentEventController::class, 'cancel']);
+    Route::put('absences/{absence}', [AbsenceController::class, 'update']);
+    Route::delete('absences/{absence}', [AbsenceController::class, 'destroy']);
 });
