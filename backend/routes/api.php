@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DriverController;
@@ -63,4 +64,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('drivers', [ReportController::class, 'drivers']);
         Route::get('fuel-consumption', [ReportController::class, 'fuelConsumption']);
     });
+
+    Route::get('/audit-logs', [AuditLogController::class, 'index']);
 });
