@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
+use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -38,13 +39,15 @@ class DriverController extends Controller
 
         $validated = $request->validate([
             'organization_id' => ['required', 'exists:organizations,id'],
-            'full_name' => ['required', 'string', 'max:255'],
+            'employee_id' => [
+                'required',
+                Rule::exists('employees', 'id')->where('organization_id', $request->organization_id)->where('status', 'active')->withoutTrashed(),
+                'unique:drivers,employee_id',
+            ],
             'license_number' => ['required', 'string', 'unique:drivers,license_number'],
             'license_category' => ['required', 'string', 'max:20'],
             'vehicle_id' => ['nullable', $this->vehicleInOrganization($request->organization_id)],
             'work_experience' => ['integer', 'min:0'],
-            'pinfl' => ['required', 'string', 'size:14', 'unique:drivers,pinfl'],
-            'phone' => ['nullable', 'string', 'max:20'],
             'license_expiry' => ['nullable', 'date'],
             'employment_type' => ['in:staff,contract,part_time'],
             'status' => ['in:active,inactive,sick_leave,vacation'],
@@ -53,7 +56,13 @@ class DriverController extends Controller
 
         Gate::authorize('access-organization', [(int) $validated['organization_id']]);
 
-        $driver = Driver::create($validated);
+        $employee = Employee::findOrFail($validated['employee_id']);
+
+        $driver = Driver::create(array_merge($validated, [
+            'full_name' => $employee->full_name,
+            'pinfl' => $employee->pinfl,
+            'phone' => $employee->phone,
+        ]));
 
         return response()->json($driver->load(['organization', 'vehicle']), 201);
     }
@@ -83,6 +92,10 @@ class DriverController extends Controller
             'status' => ['in:active,inactive,sick_leave,vacation'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        if ($driver->employee_id !== null) {
+            $validated = array_diff_key($validated, array_flip(['organization_id', 'full_name', 'pinfl', 'phone']));
+        }
 
         if (isset($validated['organization_id'])) {
             Gate::authorize('access-organization', [(int) $validated['organization_id']]);

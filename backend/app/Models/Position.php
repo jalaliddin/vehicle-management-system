@@ -33,4 +33,9 @@ class Position extends Model
     {
         return $this->hasMany(PositionPpeNorm::class);
     }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
 }

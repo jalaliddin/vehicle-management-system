@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EmploymentEvent;
 use App\Models\Position;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -58,6 +59,10 @@ class PositionController extends Controller
     public function destroy(Position $position): JsonResponse
     {
         Gate::authorize('delete', $position);
+
+        if ($position->employees()->withTrashed()->exists() || EmploymentEvent::where('position_id', $position->id)->exists()) {
+            return response()->json(['message' => "Ma'lumot ishlatilmoqda, o'chirib bo'lmaydi"], 422);
+        }
 
         $position->delete();
 

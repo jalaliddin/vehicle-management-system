@@ -82,6 +82,10 @@ class DepartmentController extends Controller
             return response()->json(['message' => "Ichki bo'limlar mavjud"], 422);
         }
 
+        if ($department->employees()->withTrashed()->exists()) {
+            return response()->json(['message' => "Bo'limda xodimlar bor"], 422);
+        }
+
         $department->delete();
 
         return response()->json(null, 204);

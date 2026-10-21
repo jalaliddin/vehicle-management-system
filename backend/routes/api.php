@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DriverController;
+use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
 use App\Http\Controllers\Api\OrganizationController;
@@ -75,4 +77,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('positions/{position}/ppe-norms', [PositionController::class, 'ppeNorms']);
     Route::put('positions/{position}/ppe-norms', [PositionController::class, 'updatePpeNorms']);
     Route::apiResource('ppe-items', PpeItemController::class);
+
+    Route::apiResource('employees', EmployeeController::class);
+    Route::prefix('employees/{employee}')->group(function () {
+        Route::get('photo', [EmployeeController::class, 'photo']);
+        Route::post('photo', [EmployeeController::class, 'uploadPhoto']);
+        Route::get('history', [EmployeeController::class, 'history']);
+        Route::get('events', [EmploymentEventController::class, 'index']);
+        Route::post('events', [EmploymentEventController::class, 'store']);
+    });
+    Route::post('employment-events/{event}/cancel', [EmploymentEventController::class, 'cancel']);
 });

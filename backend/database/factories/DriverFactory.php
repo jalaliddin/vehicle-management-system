@@ -3,7 +3,9 @@
 namespace Database\Factories;
 
 use App\Models\Driver;
+use App\Models\Employee;
 use App\Models\Organization;
+use App\Support\Hr\DriverEmployeeBackfill;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,6 +28,10 @@ class DriverFactory extends Factory
             'work_experience' => fake()->numberBetween(0, 30),
             'pinfl' => fake()->unique()->numerify('##############'),
             'status' => 'active',
+            'employee_id' => fn (array $attributes) => Employee::factory()->create(array_merge(
+                DriverEmployeeBackfill::splitName($attributes['full_name']),
+                ['organization_id' => $attributes['organization_id'], 'pinfl' => $attributes['pinfl']],
+            ))->id,
         ];
     }
 }
