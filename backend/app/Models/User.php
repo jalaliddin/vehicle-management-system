@@ -79,6 +79,11 @@ class User extends Authenticatable
         return in_array($permission->value, $this->permissionKeys(), true);
     }
 
+    public function hasAnyPermission(Permission ...$permissions): bool
+    {
+        return collect($permissions)->contains(fn (Permission $permission) => $this->hasPermission($permission));
+    }
+
     /**
      * Whether every permission of the given role is also held by this user, so they
      * can hand it out without granting more than they have.

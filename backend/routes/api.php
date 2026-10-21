@@ -3,10 +3,13 @@
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\PositionController;
+use App\Http\Controllers\Api\PpeItemController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
@@ -66,4 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
+
+    Route::apiResource('departments', DepartmentController::class);
+    Route::apiResource('positions', PositionController::class);
+    Route::get('positions/{position}/ppe-norms', [PositionController::class, 'ppeNorms']);
+    Route::put('positions/{position}/ppe-norms', [PositionController::class, 'updatePpeNorms']);
+    Route::apiResource('ppe-items', PpeItemController::class);
 });
