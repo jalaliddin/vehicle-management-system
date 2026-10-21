@@ -52,9 +52,9 @@ class AuthPermissionsTest extends TestCase
 
     public function test_system_roles_are_seeded_by_the_migration(): void
     {
-        $this->assertDatabaseCount('roles', 6);
+        $this->assertDatabaseCount('roles', 8);
 
-        foreach (['superadmin', 'hq_dispatcher', 'dispatcher', 'mechanic', 'doctor', 'viewer'] as $slug) {
+        foreach (['superadmin', 'hq_dispatcher', 'dispatcher', 'mechanic', 'doctor', 'viewer', 'hr', 'ohs'] as $slug) {
             $this->assertDatabaseHas('roles', ['slug' => $slug, 'is_system' => true]);
         }
     }

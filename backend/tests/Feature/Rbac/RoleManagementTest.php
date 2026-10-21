@@ -105,7 +105,7 @@ class RoleManagementTest extends TestCase
         Sanctum::actingAs(User::factory()->withPermissions(Permission::UsersManage)->create());
         $role = Role::firstWhere('slug', 'viewer');
 
-        $this->getJson('/api/roles')->assertOk()->assertJsonCount(7);
+        $this->getJson('/api/roles')->assertOk()->assertJsonCount(9);
         $this->getJson('/api/permissions')->assertOk()->assertJsonPath('0.key', 'data');
         $this->postJson('/api/roles', ['name' => 'Yangi'])->assertForbidden();
         $this->putJson("/api/roles/{$role->id}", ['name' => 'Boshqa'])->assertForbidden();

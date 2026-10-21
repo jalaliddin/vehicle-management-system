@@ -44,6 +44,17 @@ enum Permission: string
     case OrganizationsManage = 'organizations.manage';
     case UsersView = 'users.view';
     case UsersManage = 'users.manage';
+    case AuditView = 'audit.view';
+
+    case EmployeesView = 'employees.view';
+    case EmployeesManage = 'employees.manage';
+    case OrgStructureManage = 'org_structure.manage';
+
+    case OhsView = 'ohs.view';
+    case OhsMedicalView = 'ohs.medical.view';
+    case OhsMedicalManage = 'ohs.medical.manage';
+    case OhsBriefingsManage = 'ohs.briefings.manage';
+    case OhsPpeManage = 'ohs.ppe.manage';
 
     public function label(): string
     {
@@ -76,6 +87,15 @@ enum Permission: string
             self::OrganizationsManage => 'Tashkilotlarni boshqarish',
             self::UsersView => "Foydalanuvchilarni ko'rish",
             self::UsersManage => 'Foydalanuvchilarni boshqarish',
+            self::AuditView => "Amallar jurnalini ko'rish",
+            self::EmployeesView => "Xodimlarni ko'rish",
+            self::EmployeesManage => 'Xodimlarni boshqarish',
+            self::OrgStructureManage => 'Tuzilma va lavozimlarni boshqarish',
+            self::OhsView => "Mehnat muhofazasini ko'rish",
+            self::OhsMedicalView => "Tibbiy ko'rik natijalarini ko'rish",
+            self::OhsMedicalManage => "Tibbiy ko'riklarni boshqarish",
+            self::OhsBriefingsManage => "Yo'riqnomalarni boshqarish",
+            self::OhsPpeManage => 'Maxsus kiyim va SHHVni boshqarish',
         };
     }
 
@@ -91,7 +111,10 @@ enum Permission: string
             self::FuelView, self::FuelStationsManage, self::FuelTransactionsCreate,
             self::FuelNormsView, self::FuelNormsManage => 'fuel',
             self::ReportsView => 'reports',
-            self::OrganizationsManage, self::UsersView, self::UsersManage => 'admin',
+            self::EmployeesView, self::EmployeesManage, self::OrgStructureManage => 'hr',
+            self::OhsView, self::OhsMedicalView, self::OhsMedicalManage,
+            self::OhsBriefingsManage, self::OhsPpeManage => 'ohs',
+            self::OrganizationsManage, self::UsersView, self::UsersManage, self::AuditView => 'admin',
         };
     }
 
@@ -107,6 +130,8 @@ enum Permission: string
             'waybills' => "Yo'l varaqalari",
             'fuel' => "Yoqilg'i",
             'reports' => 'Hisobotlar',
+            'hr' => 'Kadrlar',
+            'ohs' => 'Mehnat muhofazasi',
             'admin' => 'Boshqaruv',
         ];
     }
