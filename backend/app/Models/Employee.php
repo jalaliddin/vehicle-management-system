@@ -134,6 +134,19 @@ class Employee extends Model
         return $this->hasMany(EmployeeAbsence::class);
     }
 
+    public function medicalExams(): HasMany
+    {
+        return $this->hasMany(MedicalExam::class);
+    }
+
+    /**
+     * The exam that defines the employee's medical status.
+     */
+    public function latestMedicalExam(): HasOne
+    {
+        return $this->hasOne(MedicalExam::class)->ofMany(['exam_date' => 'max', 'id' => 'max']);
+    }
+
     /**
      * Whether an actual (not planned) absence covers the date.
      */
