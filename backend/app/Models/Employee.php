@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -137,6 +138,11 @@ class Employee extends Model
     public function medicalExams(): HasMany
     {
         return $this->hasMany(MedicalExam::class);
+    }
+
+    public function briefings(): BelongsToMany
+    {
+        return $this->belongsToMany(SafetyBriefing::class, 'safety_briefing_participants')->withPivot('next_due_date');
     }
 
     /**

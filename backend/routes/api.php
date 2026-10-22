@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\PpeItemController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SafetyBriefingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\WaybillController;
@@ -100,4 +101,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('medical-exams/{exam}', [MedicalExamController::class, 'update']);
     Route::delete('medical-exams/{exam}', [MedicalExamController::class, 'destroy']);
     Route::get('medical-exams/{exam}/document', [MedicalExamController::class, 'document']);
+    Route::apiResource('safety-briefings', SafetyBriefingController::class);
 });
