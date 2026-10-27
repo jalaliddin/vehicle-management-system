@@ -80,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('stations/{station}/receipts', [FuelOperationController::class, 'receipt']);
         Route::post('stations/{station}/refuels', [FuelOperationController::class, 'refuel']);
         Route::post('transactions/{transaction}/cancel', [FuelOperationController::class, 'cancel']);
+        Route::post('stations/{station}/adjustments', [FuelOperationController::class, 'adjustment']);
         Route::get('transactions', [FuelController::class, 'transactions']);
     });
 

@@ -186,6 +186,44 @@ class FuelLedger
     }
 
     /**
+     * Inventory act: set the book balance to the counted one. Only between shifts.
+     *
+     * @param  array{actual_balance: string|int|float, document_number: string, notes: string}  $data
+     */
+    public function adjust(FuelStation $station, array $data, User $by): FuelTransaction
+    {
+        return DB::transaction(function () use ($station, $data, $by) {
+            $station = $this->lock($station);
+
+            if ($station->openShift()->exists()) {
+                throw ValidationException::withMessages(['shift' => "Inventarizatsiya smenalar orasida o'tkaziladi"]);
+            }
+
+            $actual = Quantity::toHundredths($data['actual_balance']);
+            $difference = $actual - Quantity::toHundredths($station->current_balance);
+
+            if ($difference === 0) {
+                throw ValidationException::withMessages(['actual_balance' => 'Qoldiq hisobdagi bilan bir xil, akt kerak emas']);
+            }
+
+            $transaction = $station->transactions()->create([
+                'kind' => FuelTransaction::KIND_ADJUSTMENT,
+                'type' => $difference > 0 ? 'in' : 'out',
+                'amount' => Quantity::format(abs($difference)),
+                'fuel_type' => $station->fuel_type,
+                'document_number' => $data['document_number'],
+                'document_date' => now()->toDateString(),
+                'notes' => $data['notes'],
+                'created_by' => $by->id,
+            ]);
+
+            $station->update(['current_balance' => Quantity::format($actual)]);
+
+            return $transaction;
+        });
+    }
+
+    /**
      * The vehicle's waybill that is approved or under way, if any.
      */
     public static function openWaybillOf(Vehicle $vehicle): ?Waybill

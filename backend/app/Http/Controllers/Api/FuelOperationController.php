@@ -69,6 +69,19 @@ class FuelOperationController extends Controller
         return response()->json($transaction->fresh()->load(self::RELATIONS));
     }
 
+    public function adjustment(Request $request, FuelStation $station): JsonResponse
+    {
+        Gate::authorize('adjust', $station);
+
+        $validated = $request->validate([
+            'actual_balance' => ['required', 'numeric', 'min:0'],
+            'document_number' => ['required', 'string', 'max:50'],
+            'notes' => ['required', 'string', 'max:1000'],
+        ]);
+
+        return response()->json($this->ledger->adjust($station, $validated, $request->user()), 201);
+    }
+
     /**
      * Vehicles of the station's organization for the refuel form.
      */
