@@ -37,6 +37,15 @@ onMounted(async () => {
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </div>
+          <div v-if="driver.clearance" class="d-flex flex-wrap ga-2 mb-4">
+            <v-chip :color="driver.clearance.admitted ? 'success' : 'error'" variant="tonal" prepend-icon="mdi-steering">
+              {{ driver.clearance.admitted ? "Yo'lga chiqishga ruxsat" : "Yo'lga chiqishga ruxsat yo'q" }}
+            </v-chip>
+            <v-chip v-for="reason in driver.clearance.reasons" :key="reason.code" color="error" variant="outlined" size="small">{{ reason.message }}</v-chip>
+            <v-spacer />
+            <v-btn v-if="driver.employee_id && auth.can('employees.view')" size="small" variant="text" color="primary" prepend-icon="mdi-account-details"
+              @click="router.push(`/employees/${driver.employee_id}`)">Xodim kartochkasi</v-btn>
+          </div>
           <v-divider class="mb-4" />
           <v-row>
             <v-col cols="6" md="4"><div class="text-caption text-medium-emphasis">Guvohnoma</div><div class="font-weight-medium">{{ driver.license_number }}</div></v-col>

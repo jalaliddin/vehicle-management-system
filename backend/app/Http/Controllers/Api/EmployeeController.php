@@ -32,6 +32,7 @@ class EmployeeController extends Controller
             ->when($request->department_id, fn ($q) => $q->where('department_id', $request->department_id))
             ->when($request->position_id, fn ($q) => $q->where('position_id', $request->position_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->boolean('without_driver'), fn ($q) => $q->whereDoesntHave('driver'))
             ->when($request->search, fn ($q) => $q->where(function ($q2) use ($request) {
                 $q2->where('last_name', 'like', "%{$request->search}%")
                     ->orWhere('first_name', 'like', "%{$request->search}%")

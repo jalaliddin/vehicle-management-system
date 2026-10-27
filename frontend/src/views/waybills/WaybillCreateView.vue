@@ -58,6 +58,18 @@ watch(() => form.value.organization_id, () => {
   form.value.driver_id = null
 })
 
+// Warn (without blocking) when the chosen driver lacks a valid medical exam, briefing or license.
+const driverClearance = ref(null)
+watch(() => form.value.driver_id, async (id) => {
+  driverClearance.value = null
+  if (!id) return
+  try {
+    driverClearance.value = (await driverApi.clearance(id)).data
+  } catch {
+    driverClearance.value = null
+  }
+})
+
 const selectedVehicle = computed(() =>
   vehicles.value.find(v => v.id === form.value.vehicle_id)
 )
@@ -226,6 +238,13 @@ async function create() {
               </v-select>
               <span v-if="errors.driver_id" class="err-msg">{{ errors.driver_id }}</span>
             </div>
+          </div>
+
+          <div v-if="driverClearance && !driverClearance.admitted" class="field-row">
+            <v-alert type="warning" variant="tonal" density="compact" rounded="lg">
+              <div class="font-weight-bold mb-1">Haydovchini yo'lga chiqarishdan oldin tekshiring:</div>
+              <div v-for="reason in driverClearance.reasons" :key="reason.code">• {{ reason.message }}</div>
+            </v-alert>
           </div>
 
           <div class="field-row two-col">

@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { driverApi, organizationApi, vehicleApi } from '@/services/api'
+import { driverApi, employeeApi, organizationApi, vehicleApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -17,6 +17,7 @@ const vehicles = ref([])
 
 const form = ref({
   organization_id: null,
+  employee_id: null,
   full_name: '',
   license_number: '',
   license_category: 'B',
@@ -47,13 +48,48 @@ const statusColors = { active: '#059669', inactive: '#94A3B8', sick_leave: '#DC2
 
 const categories = ['A', 'B', 'C', 'D', 'E', 'BC', 'CD']
 
+// Identity (name, PINFL, phone) comes from the employee record; only legacy drivers edit it here.
+const linkedToEmployee = computed(() => !isEdit || !!form.value.employee_id)
+const employeeOptions = ref([])
+const employeeSearch = ref('')
+
+async function searchEmployees() {
+  if (isEdit || !form.value.organization_id) return
+  const res = await employeeApi.list({
+    organization_id: form.value.organization_id, status: 'active', without_driver: 1, search: employeeSearch.value || undefined,
+  })
+  employeeOptions.value = res.data.data
+}
+
+function pickEmployee(id) {
+  const employee = employeeOptions.value.find(e => e.id === id)
+  form.value.full_name = employee?.full_name ?? ''
+  form.value.phone = employee?.phone ?? ''
+  form.value.pinfl = ''
+}
+
+let employeeSearchTimer
+watch(employeeSearch, () => {
+  clearTimeout(employeeSearchTimer)
+  employeeSearchTimer = setTimeout(searchEmployees, 300)
+})
+watch(() => form.value.organization_id, () => {
+  if (isEdit) return
+  form.value.employee_id = null
+  pickEmployee(null)
+  searchEmployees()
+})
+
 function validate() {
   const e = {}
   if (!form.value.organization_id) e.organization_id = 'Tashkilotni tanlang'
-  if (!form.value.full_name?.trim()) e.full_name = 'F.I.Sh ni kiriting'
+  if (!isEdit && !form.value.employee_id) e.employee_id = 'Xodimni tanlang'
   if (!form.value.license_number?.trim()) e.license_number = 'Guvohnoma raqamini kiriting'
-  if (!form.value.pinfl?.trim()) e.pinfl = 'PINFL ni kiriting'
-  else if (form.value.pinfl.length !== 14) e.pinfl = 'PINFL 14 ta raqam bo\'lishi kerak'
+  if (!linkedToEmployee.value) {
+    if (!form.value.full_name?.trim()) e.full_name = 'F.I.Sh ni kiriting'
+    if (!form.value.pinfl?.trim()) e.pinfl = 'PINFL ni kiriting'
+    else if (form.value.pinfl.length !== 14) e.pinfl = 'PINFL 14 ta raqam bo\'lishi kerak'
+  }
   errors.value = e
   return Object.keys(e).length === 0
 }
@@ -137,24 +173,38 @@ onMounted(load)
                   variant="outlined" density="comfortable" rounded="lg" hide-details />
                 <span v-if="errors.organization_id" class="err">{{ errors.organization_id }}</span>
               </div>
-              <div class="field-item" :class="{ 'has-error': errors.full_name }">
+              <div v-if="!isEdit" class="field-item" :class="{ 'has-error': errors.employee_id }">
+                <label>Xodim <span class="req">*</span></label>
+                <v-autocomplete v-model="form.employee_id" v-model:search="employeeSearch" :items="employeeOptions"
+                  item-title="full_name" item-value="id" no-filter placeholder="Xodimlar bazasidan tanlang"
+                  prepend-inner-icon="mdi-account-search" variant="outlined" density="comfortable" rounded="lg" hide-details
+                  no-data-text="Haydovchi profili yo'q ishlayotgan xodim topilmadi" @update:model-value="pickEmployee" />
+                <span v-if="errors.employee_id" class="err">{{ errors.employee_id }}</span>
+              </div>
+              <div v-else class="field-item" :class="{ 'has-error': errors.full_name }">
                 <label>F.I.Sh (to'liq ism) <span class="req">*</span></label>
-                <v-text-field v-model="form.full_name" placeholder="Karimov Jasur Baxtiyorovich"
+                <v-text-field v-model="form.full_name" placeholder="Karimov Jasur Baxtiyorovich" :readonly="linkedToEmployee"
                   prepend-inner-icon="mdi-account" variant="outlined" density="comfortable" rounded="lg" hide-details />
                 <span v-if="errors.full_name" class="err">{{ errors.full_name }}</span>
               </div>
             </div>
 
-            <div class="field-row two-col">
+            <div v-if="linkedToEmployee" class="linked-note">
+              <v-icon size="16" color="#2563EB">mdi-link-variant</v-icon>
+              F.I.Sh, JShShIR va telefon xodim kartochkasidan olinadi.
+              <router-link v-if="form.employee_id && isEdit" :to="`/employees/${form.employee_id}`">Kartochkani ochish</router-link>
+            </div>
+
+            <div v-if="isEdit" class="field-row two-col">
               <div class="field-item" :class="{ 'has-error': errors.pinfl }">
                 <label>JSHSHIR (PINFL) <span class="req">*</span></label>
-                <v-text-field v-model="form.pinfl" placeholder="14 ta raqam" maxlength="14"
+                <v-text-field v-model="form.pinfl" placeholder="14 ta raqam" maxlength="14" :readonly="linkedToEmployee"
                   prepend-inner-icon="mdi-card-account-details" variant="outlined" density="comfortable" rounded="lg" hide-details />
                 <span v-if="errors.pinfl" class="err">{{ errors.pinfl }}</span>
               </div>
               <div class="field-item">
                 <label>Telefon raqami</label>
-                <v-text-field v-model="form.phone" placeholder="+998 90 123 45 67"
+                <v-text-field v-model="form.phone" placeholder="+998 90 123 45 67" :readonly="linkedToEmployee"
                   prepend-inner-icon="mdi-phone" variant="outlined" density="comfortable" rounded="lg" hide-details />
               </div>
             </div>
@@ -305,4 +355,6 @@ onMounted(load)
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .cancel-btn { width: 100%; padding: 10px; background: none; border: 1px solid rgba(0,0,0,0.1); color: #64748B; font-size: 13px; font-weight: 500; border-radius: 12px; cursor: pointer; transition: background 0.15s; }
 .cancel-btn:hover { background: #F8FAFC; }
+.linked-note { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #1E40AF; background: #EFF6FF; border-radius: 10px; padding: 8px 12px; margin-top: 4px; }
+.linked-note a { color: #2563EB; font-weight: 600; margin-left: 4px; }
 </style>

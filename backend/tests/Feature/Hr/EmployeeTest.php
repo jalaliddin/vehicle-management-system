@@ -129,6 +129,19 @@ class EmployeeTest extends TestCase
         $this->getJson('/api/employees?status=dismissed')->assertOk()->assertJsonPath('data.0.last_name', 'Yusupov');
     }
 
+    public function test_without_driver_filter_excludes_employees_with_driver_profile(): void
+    {
+        $this->actingAsHr();
+        $withDriver = Employee::factory()->create(['organization_id' => $this->organization->id]);
+        Driver::factory()->create(['organization_id' => $this->organization->id, 'employee_id' => $withDriver->id]);
+        $free = Employee::factory()->create(['organization_id' => $this->organization->id]);
+
+        $this->getJson('/api/employees?without_driver=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $free->id);
+    }
+
     public function test_card_shows_full_pinfl_and_logs_view(): void
     {
         $this->actingAsHr();
