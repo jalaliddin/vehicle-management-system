@@ -164,7 +164,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->date('next_due_date')->nullable();
 
-            $table->unique(['safety_briefing_id', 'employee_id']);
+            $table->unique(['safety_briefing_id', 'employee_id'], 'briefing_participant_unique');
         });
 
         Schema::create('ppe_issues', function (Blueprint $table) {
