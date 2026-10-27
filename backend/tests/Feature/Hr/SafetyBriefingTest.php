@@ -99,6 +99,27 @@ class SafetyBriefingTest extends TestCase
         $this->assertSame('2026-08-10', SafetyBriefing::find($id)->participants()->find($this->driver->id)->pivot->next_due_date);
     }
 
+    public function test_past_briefing_stays_editable_after_a_participant_leaves(): void
+    {
+        $id = $this->postJson('/api/safety-briefings', $this->briefing())->assertCreated()->json('id');
+        $this->clerk->update(['status' => 'dismissed']);
+        $this->clerk->position->update(['briefing_months' => 3]);
+
+        $this->putJson("/api/safety-briefings/{$id}", $this->briefing(['topic' => 'Tuzatilgan mavzu']))->assertOk();
+
+        $this->assertSame('2027-01-10', SafetyBriefing::find($id)->participants()->find($this->clerk->id)->pivot->next_due_date);
+    }
+
+    public function test_dismissed_employee_cannot_be_added_to_an_existing_briefing(): void
+    {
+        $id = $this->postJson('/api/safety-briefings', $this->briefing(['participant_ids' => [$this->driver->id]]))->assertCreated()->json('id');
+        $this->clerk->update(['status' => 'dismissed']);
+
+        $this->putJson("/api/safety-briefings/{$id}", $this->briefing())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('participant_ids');
+    }
+
     public function test_participant_changes_are_audited(): void
     {
         $id = $this->postJson('/api/safety-briefings', $this->briefing())->assertCreated()->json('id');

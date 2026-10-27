@@ -49,17 +49,21 @@ class SafetyBriefing extends Model
     }
 
     /**
-     * Set the participants and each one's next repeated-briefing date.
+     * Set the participants and each one's next repeated-briefing date. Existing
+     * participants keep their date unless $recompute (the date or type changed).
      *
      * @param  list<int>  $employeeIds
      */
-    public function syncParticipants(array $employeeIds): void
+    public function syncParticipants(array $employeeIds, bool $recompute = true): void
     {
-        $before = $this->participants()->pluck('employees.id')->sort()->values()->all();
+        $current = $this->participants()->get()->mapWithKeys(fn (Employee $e) => [$e->id => $e->pivot->next_due_date]);
+        $before = $current->keys()->sort()->values()->all();
 
         $rows = Employee::with('position')->whereKey($employeeIds)->get()
             ->mapWithKeys(fn (Employee $employee) => [$employee->id => [
-                'next_due_date' => DueDates::briefingNextDue($this->conducted_on, $this->type, $employee->position?->briefing_months)?->toDateString(),
+                'next_due_date' => ! $recompute && $current->has($employee->id)
+                    ? $current[$employee->id]
+                    : DueDates::briefingNextDue($this->conducted_on, $this->type, $employee->position?->briefing_months)?->toDateString(),
             ]])
             ->all();
 

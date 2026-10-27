@@ -65,11 +65,11 @@ class SafetyBriefingController extends Controller
     {
         Gate::authorize('update', $safetyBriefing);
 
-        $validated = $this->validated($request, $safetyBriefing->organization_id);
+        $validated = $this->validated($request, $safetyBriefing);
 
         DB::transaction(function () use ($safetyBriefing, $validated) {
             $safetyBriefing->update(array_diff_key($validated, ['participant_ids' => true, 'organization_id' => true]));
-            $safetyBriefing->syncParticipants($validated['participant_ids']);
+            $safetyBriefing->syncParticipants($validated['participant_ids'], $safetyBriefing->wasChanged(['conducted_on', 'type']));
         });
 
         return response()->json($this->withParticipants($safetyBriefing));
@@ -87,8 +87,10 @@ class SafetyBriefingController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validated(Request $request, ?int $organizationId = null): array
+    private function validated(Request $request, ?SafetyBriefing $existing = null): array
     {
+        $organizationId = $existing?->organization_id;
+
         $validated = $request->validate([
             'organization_id' => [$organizationId ? 'nullable' : 'required', 'exists:organizations,id'],
             'type' => ['required', 'in:introductory,primary,repeated,unscheduled,targeted'],
@@ -103,12 +105,18 @@ class SafetyBriefingController extends Controller
 
         $organizationId ??= (int) $validated['organization_id'];
 
-        $eligible = Employee::whereKey($validated['participant_ids'])
+        // People already on the record stay on it even if they have since left.
+        $added = array_values(array_diff(
+            array_map('intval', $validated['participant_ids']),
+            $existing?->participants()->pluck('employees.id')->all() ?? [],
+        ));
+
+        $eligible = Employee::whereKey($added)
             ->where('organization_id', $organizationId)
             ->where('status', 'active')
             ->count();
 
-        if ($eligible !== count($validated['participant_ids'])) {
+        if ($eligible !== count($added)) {
             throw ValidationException::withMessages([
                 'participant_ids' => "Qatnashchilar shu tashkilotning ishlayotgan xodimlari bo'lishi kerak",
             ]);
