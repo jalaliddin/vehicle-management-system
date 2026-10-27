@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmployeePpeController;
 use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
+use App\Http\Controllers\Api\FuelOperationController;
 use App\Http\Controllers\Api\FuelShiftController;
 use App\Http\Controllers\Api\FuelSupplierController;
 use App\Http\Controllers\Api\HrAlertController;
@@ -75,7 +76,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('shifts', [FuelShiftController::class, 'index']);
         Route::get('shifts/{shift}', [FuelShiftController::class, 'show']);
         Route::post('shifts/{shift}/close', [FuelShiftController::class, 'close']);
-        Route::post('stations/{station}/transaction', [FuelController::class, 'addTransaction']);
+        Route::get('stations/{station}/vehicles', [FuelOperationController::class, 'vehicles']);
+        Route::post('stations/{station}/receipts', [FuelOperationController::class, 'receipt']);
+        Route::post('stations/{station}/refuels', [FuelOperationController::class, 'refuel']);
+        Route::post('transactions/{transaction}/cancel', [FuelOperationController::class, 'cancel']);
         Route::get('transactions', [FuelController::class, 'transactions']);
     });
 

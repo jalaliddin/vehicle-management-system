@@ -139,8 +139,10 @@ class ResourceAuthorizationTest extends TestCase
         $foreignStation = FuelStation::factory()->create();
         Sanctum::actingAs(User::factory()->withRole('dispatcher')->create(['organization_id' => $this->organization->id]));
 
-        $this->postJson("/api/fuel/stations/{$foreignStation->id}/transaction", ['type' => 'out', 'amount' => 10])->assertForbidden();
-        $this->postJson("/api/fuel/stations/{$ownStation->id}/transaction", ['type' => 'out', 'amount' => 10])->assertCreated();
+        $this->postJson("/api/fuel/stations/{$foreignStation->id}/shifts", ['opening_measured' => 5000])->assertForbidden();
+        $this->postJson("/api/fuel/stations/{$ownStation->id}/shifts", ['opening_measured' => 5000])->assertCreated();
+        $vehicle = Vehicle::factory()->create(['organization_id' => $this->organization->id, 'fuel_type' => $ownStation->fuel_type]);
+        $this->postJson("/api/fuel/stations/{$ownStation->id}/refuels", ['vehicle_id' => $vehicle->id, 'odometer' => 100, 'amount' => 10])->assertCreated();
         $this->assertEquals(4990, $ownStation->fresh()->current_balance);
     }
 

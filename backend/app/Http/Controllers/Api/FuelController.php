@@ -9,9 +9,7 @@ use App\Models\FuelTransaction;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class FuelController extends Controller
@@ -85,36 +83,6 @@ class FuelController extends Controller
         return response()->json($station);
     }
 
-    public function addTransaction(Request $request, FuelStation $station): JsonResponse
-    {
-        Gate::authorize('addTransaction', $station);
-
-        $validated = $request->validate([
-            'type' => ['required', 'in:in,out'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'waybill_id' => ['nullable', Rule::exists('waybills', 'id')->where('organization_id', $station->organization_id)->withoutTrashed()],
-            'vehicle_id' => ['nullable', Rule::exists('vehicles', 'id')->where('organization_id', $station->organization_id)->withoutTrashed()],
-            'price_per_liter' => ['nullable', 'numeric'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        DB::transaction(function () use ($validated, $station, $request, &$transaction) {
-            $transaction = FuelTransaction::create(array_merge($validated, [
-                'fuel_station_id' => $station->id,
-                'fuel_type' => $station->fuel_type,
-                'created_by' => $request->user()->id,
-            ]));
-
-            $newBalance = $validated['type'] === 'in'
-                ? $station->current_balance + $validated['amount']
-                : $station->current_balance - $validated['amount'];
-
-            $station->update(['current_balance' => max(0, $newBalance)]);
-        });
-
-        return response()->json($transaction->load(['fuelStation', 'vehicle', 'waybill']), 201);
-    }
-
     public function transactions(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', FuelStation::class);
@@ -126,11 +94,17 @@ class FuelController extends Controller
             'vehicle:id,state_number',
             'waybill:id,waybill_number',
             'createdBy:id,name',
+            'driver:id,full_name',
+            'supplier:id,name',
+            'cancelledBy:id,name',
         ])
             ->whereIn('fuel_station_id', FuelStation::accessibleBy($user)->select('id'))
             ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
+            ->when($request->kind, fn ($q) => $q->where('kind', $request->kind))
+            ->when($request->station_id, fn ($q) => $q->where('fuel_station_id', $request->station_id))
+            ->when($request->vehicle_id, fn ($q) => $q->where('vehicle_id', $request->vehicle_id))
             ->latest()
             ->paginate($request->per_page ?? 20);
 

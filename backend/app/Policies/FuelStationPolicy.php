@@ -40,9 +40,4 @@ class FuelStationPolicy
     {
         return $user->hasPermission(Permission::FuelAdjust) && $user->canAccessStation($station);
     }
-
-    public function addTransaction(User $user, FuelStation $station): bool
-    {
-        return $this->operate($user, $station);
-    }
 }

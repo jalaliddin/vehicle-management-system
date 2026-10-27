@@ -52,6 +52,8 @@ class VehicleController extends Controller
             'fuel_norm' => ['nullable', 'numeric'],
             'fuel_norm_ac' => ['nullable', 'numeric'],
             'fuel_type' => ['required', 'string'],
+            'tank_capacity' => ['nullable', 'numeric', 'min:0', 'max:2000'],
+            'odometer' => ['nullable', 'integer', 'min:0', 'max:9999999'],
             'status' => ['in:active,broken,maintenance,inactive'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -93,6 +95,8 @@ class VehicleController extends Controller
             'fuel_norm' => ['nullable', 'numeric'],
             'fuel_norm_ac' => ['nullable', 'numeric'],
             'fuel_type' => ['string'],
+            'tank_capacity' => ['nullable', 'numeric', 'min:0', 'max:2000'],
+            'odometer' => ['nullable', 'integer', 'min:0', 'max:9999999'],
             'status' => ['in:active,broken,maintenance,inactive'],
             'notes' => ['nullable', 'string'],
         ]);
