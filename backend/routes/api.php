@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EmployeeImportController;
 use App\Http\Controllers\Api\EmployeePpeController;
 use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
@@ -85,6 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('positions/{position}/ppe-norms', [PositionController::class, 'updatePpeNorms']);
     Route::apiResource('ppe-items', PpeItemController::class);
 
+    Route::get('employees/import-template', [EmployeeImportController::class, 'template']);
+    Route::post('employees/import', [EmployeeImportController::class, 'import']);
     Route::apiResource('employees', EmployeeController::class);
     Route::prefix('employees/{employee}')->group(function () {
         Route::get('photo', [EmployeeController::class, 'photo']);
