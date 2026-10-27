@@ -105,6 +105,14 @@ class Waybill extends Model
         return in_array($this->status, self::ACTION_STATUSES[$action] ?? [], true);
     }
 
+    /**
+     * Refuels recorded against this waybill, cancelled ones left out.
+     */
+    public function refuels(): HasMany
+    {
+        return $this->hasMany(FuelTransaction::class)->where('kind', FuelTransaction::KIND_REFUEL)->whereNull('cancelled_at');
+    }
+
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);

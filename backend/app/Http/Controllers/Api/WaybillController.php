@@ -75,6 +75,7 @@ class WaybillController extends Controller
             'mechanic:id,name',
             'doctor:id,name',
             'approvedByUser:id,name',
+            'refuels' => fn ($q) => $q->with('fuelStation:id,name')->orderBy('created_at'),
         ]));
     }
 
