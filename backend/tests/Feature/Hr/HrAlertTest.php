@@ -75,6 +75,18 @@ class HrAlertTest extends TestCase
         $this->assertSame([$employee->id, 'overdue', null], [$alerts[0]['employee_id'], $alerts[0]['state'], $alerts[0]['due_date']]);
     }
 
+    public function test_exam_recorded_before_the_position_got_a_periodicity_falls_due(): void
+    {
+        $employee = $this->employee();
+        MedicalExam::factory()->for($employee)->create(['exam_date' => '2025-01-10', 'next_due_date' => null]);
+        $this->position->update(['medical_exam_months' => 12]);
+
+        $alerts = $this->alerts('?category=medical');
+
+        $this->assertCount(1, $alerts);
+        $this->assertSame(['overdue', '2026-01-10'], [$alerts[0]['state'], $alerts[0]['due_date']]);
+    }
+
     public function test_unfit_exam_is_an_alert(): void
     {
         MedicalExam::factory()->for($this->employee())->create(['result' => 'unfit', 'next_due_date' => null]);

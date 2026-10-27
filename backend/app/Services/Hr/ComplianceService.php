@@ -98,10 +98,12 @@ class ComplianceService
                 continue;
             }
 
+            $exam->setRelation('employee', $employee);
+
             if ($exam->result === 'unfit') {
                 $alerts[] = ['category' => 'medical', 'employee_id' => $employee->id, 'due_date' => null, 'detail' => 'Tibbiy xulosa: yaroqsiz'];
-            } elseif ($exam->next_due_date !== null) {
-                $alerts[] = ['category' => 'medical', 'employee_id' => $employee->id, 'due_date' => $exam->next_due_date, 'detail' => "Davriy tibbiy ko'rik"];
+            } elseif ($exam->dueDate() !== null) {
+                $alerts[] = ['category' => 'medical', 'employee_id' => $employee->id, 'due_date' => CarbonImmutable::parse($exam->dueDate()), 'detail' => "Davriy tibbiy ko'rik"];
             }
         }
 

@@ -20,7 +20,9 @@ class MedicalExamController extends Controller
     {
         Gate::authorize('viewFor', [MedicalExam::class, $employee]);
 
-        $exams = $employee->medicalExams()->orderByDesc('exam_date')->orderByDesc('id')->get();
+        $employee->loadMissing('position');
+        $exams = $employee->medicalExams()->orderByDesc('exam_date')->orderByDesc('id')->get()
+            ->each->setRelation('employee', $employee);
 
         return MedicalExamResource::collection($exams)->response();
     }
@@ -36,15 +38,15 @@ class MedicalExamController extends Controller
 
         $user = $request->user();
 
-        $exams = Employee::with('latestMedicalExam.employee')
+        $exams = Employee::with(['latestMedicalExam', 'position'])
             ->where('status', 'active')
             ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->organization_id, fn ($q) => $q->where('organization_id', $request->organization_id))
             ->whereHas('latestMedicalExam')
             ->get()
-            ->pluck('latestMedicalExam')
+            ->map(fn (Employee $employee) => $employee->latestMedicalExam->setRelation('employee', $employee))
             ->when($request->state, fn ($exams) => $exams->filter(fn (MedicalExam $exam) => $exam->status() === $request->state))
-            ->sortBy('next_due_date')
+            ->sortBy(fn (MedicalExam $exam) => $exam->dueDate()?->toDateString())
             ->values();
 
         return MedicalExamResource::collection($exams)->response();

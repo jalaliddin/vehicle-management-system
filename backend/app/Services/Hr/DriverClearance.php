@@ -48,7 +48,7 @@ class DriverClearance
                 $codes[] = 'employee_dismissed';
             }
 
-            $exam = $employee->latestMedicalExam;
+            $exam = $employee->latestMedicalExam?->setRelation('employee', $employee);
 
             if ($exam === null) {
                 if ($employee->position?->medical_exam_months !== null) {
@@ -56,7 +56,7 @@ class DriverClearance
                 }
             } elseif ($exam->result === 'unfit') {
                 $codes[] = 'medical_unfit';
-            } elseif ($exam->next_due_date !== null && $exam->next_due_date->lt($on)) {
+            } elseif ($exam->dueDate() !== null && $exam->dueDate()->lt($on)) {
                 $codes[] = 'medical_overdue';
             }
 

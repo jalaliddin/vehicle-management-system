@@ -88,6 +88,14 @@ class DriverClearanceTest extends TestCase
         $this->assertContains($code, array_column($result['reasons'], 'code'));
     }
 
+    public function test_exam_without_due_date_falls_due_by_the_positions_periodicity(): void
+    {
+        $driver = $this->admittedDriver();
+        $driver->employee->medicalExams()->update(['exam_date' => '2025-01-10', 'next_due_date' => null]);
+
+        $this->assertContains('medical_overdue', array_column(app(DriverClearance::class)->check($driver->fresh())['reasons'], 'code'));
+    }
+
     public function test_driver_show_embeds_clearance(): void
     {
         $driver = $this->admittedDriver();

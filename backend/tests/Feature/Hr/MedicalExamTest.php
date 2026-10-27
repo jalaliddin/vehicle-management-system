@@ -73,6 +73,16 @@ class MedicalExamTest extends TestCase
         $this->assertSame('valid', MedicalExam::factory()->make(['next_due_date' => null, 'result' => 'fit'])->status());
     }
 
+    public function test_list_shows_the_due_date_from_the_positions_periodicity(): void
+    {
+        MedicalExam::factory()->for($this->employee)->create(['exam_date' => '2026-01-10', 'next_due_date' => null]);
+        $this->actingWith(Permission::OhsView);
+
+        $this->getJson("/api/employees/{$this->employee->id}/medical-exams")
+            ->assertOk()
+            ->assertJsonPath('0.next_due_date', '2027-01-10');
+    }
+
     public function test_user_without_medical_view_gets_no_medical_details(): void
     {
         MedicalExam::factory()->for($this->employee)->create(['result' => 'fit_with_restrictions', 'restrictions' => 'Tungi ish taqiqlangan']);

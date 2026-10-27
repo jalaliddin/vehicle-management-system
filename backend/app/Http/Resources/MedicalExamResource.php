@@ -26,7 +26,7 @@ class MedicalExamResource extends JsonResource
             'employee_id' => $this->employee_id,
             'type' => $this->type,
             'exam_date' => $this->exam_date->toDateString(),
-            'next_due_date' => $this->next_due_date?->toDateString(),
+            'next_due_date' => $this->dueDate()?->toDateString(),
             'status' => $this->status(),
             'employee' => $this->whenLoaded('employee', fn () => [
                 'id' => $this->employee->id,
