@@ -26,7 +26,9 @@ class AuditLogController extends Controller
         $user = $request->user();
 
         $logs = AuditLog::with('user:id,name')
-            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $user->organization_id === null
+                ? $q->whereRaw('1 = 0')
+                : $q->where('organization_id', $user->organization_id))
             ->when($request->user_id, fn ($q) => $q->where('user_id', $request->user_id))
             ->when($request->employee_id, fn ($q) => $q->where('employee_id', $request->employee_id))
             ->when($request->event, fn ($q) => $q->where('event', $request->event))

@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Models\AuditLog;
+use App\Models\Employee;
 
 /**
  * Writes an audit log entry whenever the model is created, updated or deleted.
@@ -43,11 +44,16 @@ trait Auditable
     }
 
     /**
-     * The organization the record belongs to, used to scope who sees the entry.
+     * The organization the record belongs to — its own, or its employee's —
+     * used to scope who sees the entry.
      */
     public function auditOrganizationId(): ?int
     {
         $id = $this->getAttribute('organization_id');
+
+        if ($id === null && $this->getAttribute('employee_id') !== null) {
+            $id = Employee::withTrashed()->whereKey($this->getAttribute('employee_id'))->value('organization_id');
+        }
 
         return $id === null ? null : (int) $id;
     }

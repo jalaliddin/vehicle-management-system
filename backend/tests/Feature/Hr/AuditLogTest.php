@@ -5,6 +5,8 @@ namespace Tests\Feature\Hr;
 use App\Enums\Permission;
 use App\Models\AuditLog;
 use App\Models\Concerns\Auditable;
+use App\Models\Employee;
+use App\Models\MedicalExam;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
@@ -140,6 +142,23 @@ class AuditLogTest extends TestCase
         $this->assertSame([$own->id], $entries->pluck('organization_id')->unique()->values()->all());
         $this->assertContains('mine', $entries->pluck('new_values.name'));
         $this->assertNotContains('theirs', $entries->pluck('new_values.name'));
+    }
+
+    public function test_scoped_user_without_organization_sees_no_entries(): void
+    {
+        AuditedThing::create(['name' => 'global', 'organization_id' => null]);
+        Sanctum::actingAs(User::factory()->withPermissions(Permission::AuditView)->create(['organization_id' => null]));
+
+        $this->getJson('/api/audit-logs')->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_employee_records_are_logged_under_the_employees_organization(): void
+    {
+        $organization = Organization::factory()->create();
+        $exam = MedicalExam::factory()->for(Employee::factory()->create(['organization_id' => $organization->id]))->create();
+
+        $this->assertSame($organization->id, AuditLog::where('auditable_type', MedicalExam::class)
+            ->where('auditable_id', $exam->id)->value('organization_id'));
     }
 
     public function test_audit_log_endpoint_filters_by_employee_id(): void
