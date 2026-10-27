@@ -122,6 +122,16 @@ class SafetyBriefingTest extends TestCase
         $this->getJson('/api/safety-briefings?from=2026-02-01')->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_list_filters_by_participant(): void
+    {
+        $this->postJson('/api/safety-briefings', $this->briefing())->assertCreated();
+        $this->postJson('/api/safety-briefings', $this->briefing(['participant_ids' => [$this->clerk->id]]))->assertCreated();
+
+        $this->getJson("/api/safety-briefings?employee_id={$this->driver->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+    }
+
     public function test_briefing_can_be_deleted(): void
     {
         $id = $this->postJson('/api/safety-briefings', $this->briefing())->assertCreated()->json('id');

@@ -24,6 +24,7 @@ class SafetyBriefingController extends Controller
             ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
             ->when($request->organization_id, fn ($q) => $q->where('organization_id', $request->organization_id))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
+            ->when($request->employee_id, fn ($q) => $q->whereHas('participants', fn ($p) => $p->whereKey($request->employee_id)))
             ->when($request->from, fn ($q) => $q->whereDate('conducted_on', '>=', $request->from))
             ->when($request->to, fn ($q) => $q->whereDate('conducted_on', '<=', $request->to))
             ->orderByDesc('conducted_on')
