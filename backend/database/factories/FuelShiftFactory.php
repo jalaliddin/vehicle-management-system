@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\FuelShift;
 use App\Models\FuelStation;
 use App\Models\User;
+use App\Support\Fuel\Quantity;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -31,13 +32,13 @@ class FuelShiftFactory extends Factory
 
     public function closed(string $measured, ?string $note = null): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state([
             'status' => 'closed',
-            'closed_by' => $attributes['opened_by'],
+            'closed_by' => fn (array $attributes) => $attributes['opened_by'],
             'closed_at' => now(),
-            'closing_balance' => $attributes['opening_balance'],
+            'closing_balance' => fn (array $attributes) => $attributes['opening_balance'],
             'closing_measured' => $measured,
-            'discrepancy' => (float) $measured - (float) $attributes['opening_balance'],
+            'discrepancy' => fn (array $attributes) => Quantity::format(Quantity::toHundredths($measured) - Quantity::toHundredths($attributes['closing_balance'])),
             'discrepancy_note' => $note,
         ]);
     }
