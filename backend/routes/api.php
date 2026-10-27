@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
 use App\Http\Controllers\Api\HrAlertController;
+use App\Http\Controllers\Api\HrReportController;
 use App\Http\Controllers\Api\MedicalExamController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PositionController;
@@ -110,4 +111,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('ppe-issues/{issue}/close', [EmployeePpeController::class, 'close']);
     Route::get('hr/alerts', [HrAlertController::class, 'index']);
     Route::get('hr/alerts/summary', [HrAlertController::class, 'summary']);
+
+    Route::prefix('hr/reports')->group(function () {
+        Route::get('headcount', [HrReportController::class, 'headcount']);
+        Route::get('movement', [HrReportController::class, 'movement']);
+        Route::get('absent', [HrReportController::class, 'absent']);
+        Route::get('leave-schedule', [HrReportController::class, 'leaveSchedule']);
+        Route::get('briefing-journal', [HrReportController::class, 'briefingJournal']);
+        Route::get('ppe-issues', [HrReportController::class, 'ppeIssues']);
+        Route::get('ppe-demand', [HrReportController::class, 'ppeDemand']);
+    });
 });
