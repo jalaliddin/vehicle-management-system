@@ -77,3 +77,20 @@ export function errorMessage(err, fallback = 'Xatolik yuz berdi') {
   }
   return data?.message || fallback
 }
+
+// Export rows as a CSV file Excel opens with the right encoding.
+// columns: [{ key, title, value?: (row) => any }]
+export function exportCsv(rows, columns, filename) {
+  const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const lines = [columns.map(c => escape(c.title)).join(';')]
+  for (const row of rows) {
+    lines.push(columns.map(c => escape(c.value ? c.value(row) : row[c.key])).join(';'))
+  }
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
