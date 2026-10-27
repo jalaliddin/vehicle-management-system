@@ -60,7 +60,7 @@ class PpeItemController extends Controller
     {
         Gate::authorize('delete', $ppeItem);
 
-        if ($ppeItem->norms()->exists()) {
+        if ($ppeItem->norms()->exists() || $ppeItem->issues()->exists()) {
             return response()->json(['message' => "Ma'lumot ishlatilmoqda, o'chirib bo'lmaydi"], 422);
         }
 

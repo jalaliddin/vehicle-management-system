@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EmployeePpeController;
 use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
@@ -93,6 +94,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('leave-balance', [AbsenceController::class, 'leaveBalance']);
         Route::get('medical-exams', [MedicalExamController::class, 'index']);
         Route::post('medical-exams', [MedicalExamController::class, 'store']);
+        Route::get('ppe', [EmployeePpeController::class, 'show']);
+        Route::post('ppe-issues', [EmployeePpeController::class, 'store']);
     });
     Route::post('employment-events/{event}/cancel', [EmploymentEventController::class, 'cancel']);
     Route::put('absences/{absence}', [AbsenceController::class, 'update']);
@@ -102,4 +105,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('medical-exams/{exam}', [MedicalExamController::class, 'destroy']);
     Route::get('medical-exams/{exam}/document', [MedicalExamController::class, 'document']);
     Route::apiResource('safety-briefings', SafetyBriefingController::class);
+    Route::post('ppe-issues/{issue}/close', [EmployeePpeController::class, 'close']);
 });

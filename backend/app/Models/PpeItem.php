@@ -33,4 +33,9 @@ class PpeItem extends Model
     {
         return $this->hasMany(PositionPpeNorm::class);
     }
+
+    public function issues(): HasMany
+    {
+        return $this->hasMany(PpeIssue::class);
+    }
 }

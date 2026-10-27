@@ -140,6 +140,11 @@ class Employee extends Model
         return $this->hasMany(MedicalExam::class);
     }
 
+    public function ppeIssues(): HasMany
+    {
+        return $this->hasMany(PpeIssue::class);
+    }
+
     public function briefings(): BelongsToMany
     {
         return $this->belongsToMany(SafetyBriefing::class, 'safety_briefing_participants')->withPivot('next_due_date');
