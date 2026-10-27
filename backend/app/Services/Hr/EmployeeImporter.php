@@ -263,13 +263,18 @@ class EmployeeImporter
     }
 
     /**
-     * Parse CSV text saved by Excel in any locale: optional BOM, "," or ";".
+     * Parse CSV text saved by Excel in any locale: UTF-8 with or without BOM,
+     * or Windows-1251 (Russian Excel's default), "," or ";".
      *
      * @return list<list<string>>
      */
     private function readCsv(string $content): array
     {
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1251');
+        }
         $lines = preg_split('/\r\n|\n|\r/', $content);
         $delimiter = substr_count($lines[0] ?? '', ';') > substr_count($lines[0] ?? '', ',') ? ';' : ',';
 

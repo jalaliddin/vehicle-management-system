@@ -131,6 +131,18 @@ class EmployeeImportTest extends TestCase
         $this->assertSame('1985-04-12', Employee::first()->birth_date->toDateString());
     }
 
+    public function test_windows_1251_csv_from_russian_excel_is_converted(): void
+    {
+        $lines = array_map(fn (array $row) => implode(';', $row), [self::HEADER, $this->row('11111111111111', ['familiya' => 'Каримов', 'ism' => 'Анвар'])]);
+        $file = UploadedFile::fake()->createWithContent('xodimlar.csv', mb_convert_encoding(implode("\r\n", $lines), 'Windows-1251', 'UTF-8'));
+
+        $this->post('/api/employees/import', ['file' => $file], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->assertJsonPath('imported', 1);
+
+        $this->assertSame('Каримов Анвар Olimovich', Employee::first()->full_name);
+    }
+
     public function test_xlsx_with_date_cells_parses(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'xlsx');
