@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\FuelStation;
 use App\Models\FuelTransaction;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class FuelController extends Controller
 {
@@ -20,7 +23,7 @@ class FuelController extends Controller
         $user = $request->user();
 
         $stations = FuelStation::with('organization:id,name,short_name')
-            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
+            ->accessibleBy($user)
             ->get()
             ->map(function (FuelStation $station) {
                 return array_merge($station->toArray(), [
@@ -38,10 +41,10 @@ class FuelController extends Controller
 
         $user = $request->user();
 
-        $stations = FuelStation::with('organization:id,name,short_name')
-            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id))
+        $stations = FuelStation::with(['organization:id,name,short_name', 'fuelers:id,name'])
+            ->accessibleBy($user)
             ->get()
-            ->map(fn (FuelStation $s) => array_merge($s->toArray(), ['percentage' => $s->percentage]));
+            ->map(fn (FuelStation $s) => array_merge($s->toArray(), ['percentage' => $s->percentage, 'unit' => $s->unit()]));
 
         return response()->json($stations);
     }
@@ -124,9 +127,7 @@ class FuelController extends Controller
             'waybill:id,waybill_number',
             'createdBy:id,name',
         ])
-            ->when(! $user->canAccessAllOrganizations(), function ($q) use ($user) {
-                $q->whereHas('fuelStation', fn ($sq) => $sq->where('organization_id', $user->organization_id));
-            })
+            ->whereIn('fuel_station_id', FuelStation::accessibleBy($user)->select('id'))
             ->when($request->date_from, fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
@@ -134,5 +135,32 @@ class FuelController extends Controller
             ->paginate($request->per_page ?? 20);
 
         return response()->json($transactions);
+    }
+
+    /**
+     * Replace the fuelers assigned to the station.
+     */
+    public function assignFuelers(Request $request, FuelStation $station): JsonResponse
+    {
+        Gate::authorize('update', $station);
+
+        $validated = $request->validate([
+            'user_ids' => ['present', 'array'],
+            'user_ids.*' => ['integer', 'distinct'],
+        ]);
+
+        $users = User::with('role.permissions')->whereKey($validated['user_ids'])->get();
+        $eligible = $users->filter(fn (User $user) => $user->organization_id === $station->organization_id
+            && ($user->isSuperAdmin() || $user->hasPermission(Permission::FuelTransactionsCreate)));
+
+        if ($eligible->count() !== count($validated['user_ids'])) {
+            throw ValidationException::withMessages([
+                'user_ids' => "Quyuvchi shu tashkilot xodimi va yoqilg'i harakati huquqiga ega bo'lishi kerak",
+            ]);
+        }
+
+        $station->fuelers()->sync($eligible->modelKeys());
+
+        return response()->json($station->load('fuelers:id,name'));
     }
 }

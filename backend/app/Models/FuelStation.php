@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use Database\Factories\FuelStationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,20 @@ class FuelStation extends Model
             'current_balance' => 'decimal:2',
             'min_threshold' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Stations the user may see: their organization's, or only their assigned ones.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeAccessibleBy(Builder $query, User $user): void
+    {
+        $assigned = $user->fuelStations()->pluck('fuel_stations.id');
+
+        $query
+            ->when(! $user->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $user->organization_id ?? 0))
+            ->when($assigned->isNotEmpty(), fn ($q) => $q->whereKey($assigned));
     }
 
     public function organization(): BelongsTo

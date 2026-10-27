@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmployeePpeController;
 use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
+use App\Http\Controllers\Api\FuelSupplierController;
 use App\Http\Controllers\Api\HrAlertController;
 use App\Http\Controllers\Api\HrReportController;
 use App\Http\Controllers\Api\MedicalExamController;
@@ -66,6 +67,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('stations', [FuelController::class, 'stationIndex']);
         Route::post('stations', [FuelController::class, 'stationStore']);
         Route::put('stations/{station}', [FuelController::class, 'stationUpdate']);
+        Route::put('stations/{station}/fuelers', [FuelController::class, 'assignFuelers']);
+        Route::apiResource('suppliers', FuelSupplierController::class)->except('show');
         Route::post('stations/{station}/transaction', [FuelController::class, 'addTransaction']);
         Route::get('transactions', [FuelController::class, 'transactions']);
     });

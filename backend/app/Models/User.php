@@ -58,6 +58,20 @@ class User extends Authenticatable
         return $this->hasMany(Waybill::class, 'approved_by');
     }
 
+    /**
+     * Organization access, narrowed to the user's assigned stations when they have any.
+     */
+    public function canAccessStation(FuelStation $station): bool
+    {
+        if (! $this->canAccessOrganization($station->organization_id)) {
+            return false;
+        }
+
+        $assigned = $this->fuelStations()->pluck('fuel_stations.id');
+
+        return $assigned->isEmpty() || $assigned->contains($station->id);
+    }
+
     public function fuelStations(): BelongsToMany
     {
         return $this->belongsToMany(FuelStation::class, 'fuel_station_user');
