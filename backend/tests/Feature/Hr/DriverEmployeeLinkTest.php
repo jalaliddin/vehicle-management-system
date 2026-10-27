@@ -103,4 +103,31 @@ class DriverEmployeeLinkTest extends TestCase
 
         $this->assertNull($driver->fresh()->vehicle_id);
     }
+
+    public function test_deleted_driver_profile_is_restored_for_the_returning_employee(): void
+    {
+        $employee = Employee::factory()->create(['organization_id' => $this->organization->id, 'pinfl' => '12345678901234']);
+        $old = Driver::factory()->create([
+            'organization_id' => $this->organization->id, 'employee_id' => $employee->id, 'pinfl' => '12345678901234', 'license_number' => 'AB1234567',
+        ]);
+        $old->delete();
+
+        $this->postJson('/api/drivers', $this->driverPayload($employee))
+            ->assertCreated()
+            ->assertJsonPath('id', $old->id);
+
+        $this->assertNotSoftDeleted($old);
+    }
+
+    public function test_deleted_legacy_driver_with_the_same_pinfl_is_restored_and_linked(): void
+    {
+        $employee = Employee::factory()->create(['organization_id' => $this->organization->id, 'pinfl' => '12345678901234']);
+        $old = Driver::factory()->create(['organization_id' => $this->organization->id, 'employee_id' => null, 'pinfl' => '12345678901234']);
+        $old->delete();
+
+        $this->postJson('/api/drivers', $this->driverPayload($employee))
+            ->assertCreated()
+            ->assertJsonPath('id', $old->id)
+            ->assertJsonPath('employee_id', $employee->id);
+    }
 }

@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Services\Hr\DriverClearance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
@@ -40,14 +41,16 @@ class DriverController extends Controller
     {
         Gate::authorize('create', Driver::class);
 
+        $previous = $this->deletedProfileOf(Employee::find($request->employee_id));
+
         $validated = $request->validate([
             'organization_id' => ['required', 'exists:organizations,id'],
             'employee_id' => [
                 'required',
                 Rule::exists('employees', 'id')->where('organization_id', $request->organization_id)->where('status', 'active')->withoutTrashed(),
-                'unique:drivers,employee_id',
+                Rule::unique('drivers', 'employee_id')->withoutTrashed(),
             ],
-            'license_number' => ['required', 'string', 'unique:drivers,license_number'],
+            'license_number' => ['required', 'string', Rule::unique('drivers', 'license_number')->ignore($previous?->id)],
             'license_category' => ['required', 'string', 'max:20'],
             'vehicle_id' => ['nullable', $this->vehicleInOrganization($request->organization_id)],
             'work_experience' => ['integer', 'min:0'],
@@ -60,14 +63,39 @@ class DriverController extends Controller
         Gate::authorize('access-organization', [(int) $validated['organization_id']]);
 
         $employee = Employee::findOrFail($validated['employee_id']);
-
-        $driver = Driver::create(array_merge($validated, [
+        $attributes = array_merge($validated, [
             'full_name' => $employee->full_name,
             'pinfl' => $employee->pinfl,
             'phone' => $employee->phone,
-        ]));
+        ]);
+
+        $driver = DB::transaction(function () use ($previous, $attributes) {
+            if ($previous === null) {
+                return Driver::create($attributes);
+            }
+
+            $previous->restore();
+            $previous->update($attributes);
+
+            return $previous;
+        });
 
         return response()->json($driver->load(['organization', 'vehicle']), 201);
+    }
+
+    /**
+     * A deleted driver profile of this person — by employee or, for legacy
+     * rows, by PINFL — is brought back instead of colliding with it.
+     */
+    private function deletedProfileOf(?Employee $employee): ?Driver
+    {
+        if ($employee === null) {
+            return null;
+        }
+
+        return Driver::onlyTrashed()
+            ->where(fn ($q) => $q->where('employee_id', $employee->id)->orWhere('pinfl', $employee->pinfl))
+            ->first();
     }
 
     public function show(Driver $driver): JsonResponse

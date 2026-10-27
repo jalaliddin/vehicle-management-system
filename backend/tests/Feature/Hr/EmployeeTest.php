@@ -231,7 +231,30 @@ class EmployeeTest extends TestCase
 
         $other = Employee::factory()->create(['organization_id' => $this->organization->id]);
         $this->deleteJson("/api/employees/{$other->id}")->assertNoContent();
-        $this->assertSoftDeleted($other);
+        $this->assertModelMissing($other);
+    }
+
+    public function test_deleting_an_employee_frees_the_pinfl(): void
+    {
+        $this->actingAsHr();
+        $id = $this->postJson('/api/employees', $this->payload())->assertCreated()->json('id');
+
+        $this->deleteJson("/api/employees/{$id}")->assertNoContent();
+
+        $this->postJson('/api/employees', $this->payload())->assertCreated();
+        $this->assertTrue(AuditLog::where('auditable_type', Employee::class)->where('auditable_id', $id)->where('event', 'deleted')->exists());
+    }
+
+    public function test_pinfl_already_used_by_another_driver_is_rejected(): void
+    {
+        $this->actingAsHr();
+        $employee = Employee::factory()->create(['organization_id' => $this->organization->id]);
+        Driver::factory()->create(['organization_id' => $this->organization->id, 'employee_id' => $employee->id]);
+        Driver::factory()->create(['employee_id' => null, 'pinfl' => '55555555555555']);
+
+        $this->putJson("/api/employees/{$employee->id}", ['pinfl' => '55555555555555'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('pinfl');
     }
 
     public function test_history_requires_audit_view(): void

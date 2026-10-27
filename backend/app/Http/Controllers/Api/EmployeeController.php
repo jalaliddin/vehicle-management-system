@@ -91,7 +91,11 @@ class EmployeeController extends Controller
         $validated = $request->validate(array_merge($this->cardRules(), [
             'last_name' => ['string', 'max:100'],
             'first_name' => ['string', 'max:100'],
-            'pinfl' => ['regex:/^\d{14}$/', Rule::unique('employees', 'pinfl')->ignore($employee->id)],
+            'pinfl' => [
+                'regex:/^\d{14}$/',
+                Rule::unique('employees', 'pinfl')->ignore($employee->id),
+                Rule::unique('drivers', 'pinfl')->ignore($employee->driver?->id),
+            ],
         ]));
 
         DB::transaction(function () use ($employee, $validated) {
@@ -112,9 +116,13 @@ class EmployeeController extends Controller
             return response()->json(['message' => "Haydovchining yo'l varaqalari bor, xodimni o'chirib bo'lmaydi"], 422);
         }
 
+        // Deletion is for cards created by mistake: remove them for good so the
+        // PINFL can be entered again. The audit log keeps the deleted values.
         DB::transaction(function () use ($employee, $driver) {
-            $driver?->delete();
-            $employee->delete();
+            $files = array_filter([$employee->photo_path, ...$employee->medicalExams()->pluck('document_path')->all()]);
+            $driver?->forceDelete();
+            $employee->forceDelete();
+            Storage::disk('local')->delete($files);
         });
 
         return response()->json(null, 204);
