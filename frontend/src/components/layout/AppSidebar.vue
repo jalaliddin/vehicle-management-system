@@ -47,12 +47,30 @@ const sections = computed(() => {
       ],
     },
     {
+      label: 'Kadrlar',
+      items: [
+        { title: 'Xodimlar', to: '/employees', icon: 'mdi-account-multiple', permission: 'employees.view' },
+        { title: 'Tuzilma', to: '/org-structure', icon: 'mdi-sitemap', permission: 'org_structure.manage' },
+        { title: 'Kadrlar hisobotlari', to: '/hr/reports', icon: 'mdi-chart-box', permission: ['employees.view', 'ohs.view'] },
+      ],
+    },
+    {
+      label: 'Mehnat muhofazasi',
+      items: [
+        { title: 'Ogohlantirishlar', to: '/ohs/alerts', icon: 'mdi-alert', permission: ['ohs.view', 'employees.view'] },
+        { title: "Tibbiy ko'riklar", to: '/ohs/medical', icon: 'mdi-heart-pulse', permission: ['ohs.view', 'ohs.medical.view'] },
+        { title: "Yo'riqnomalar", to: '/ohs/briefings', icon: 'mdi-clipboard-check', permission: 'ohs.view' },
+        { title: 'Maxsus kiyim va SHHV', to: '/ohs/ppe', icon: 'mdi-hard-hat', permission: 'ohs.view' },
+      ],
+    },
+    {
       label: 'Boshqaruv',
       items: [
         { title: "Yoqilg'i me'yorlari", to: '/fuel-norms', icon: 'mdi-clipboard-list', permission: 'fuel_norms.view' },
         { title: 'Tashkilotlar', to: '/organizations', icon: 'mdi-domain', permission: 'organizations.manage' },
         { title: 'Foydalanuvchilar', to: '/users', icon: 'mdi-account-group', permission: ['users.view', 'users.manage'] },
         { title: 'Rollar va huquqlar', to: '/roles', icon: 'mdi-shield-account', superAdmin: true },
+        { title: 'Amallar jurnali', to: '/audit', icon: 'mdi-history', permission: 'audit.view' },
       ],
     },
     {

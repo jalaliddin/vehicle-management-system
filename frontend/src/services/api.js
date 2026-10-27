@@ -57,6 +57,7 @@ export const driverApi = {
   update: (id, data) => api.put(`/drivers/${id}`, data),
   delete: (id) => api.delete(`/drivers/${id}`),
   assign: (id, vehicleId) => api.post(`/drivers/${id}/assign`, { vehicle_id: vehicleId }),
+  clearance: (id) => api.get(`/drivers/${id}/clearance`),
 }
 
 export const waybillApi = {
@@ -113,4 +114,100 @@ export const reportApi = {
   vehicles: (params) => api.get('/reports/vehicles', { params }),
   drivers: (params) => api.get('/reports/drivers', { params }),
   fuelConsumption: (params) => api.get('/reports/fuel-consumption', { params }),
+}
+
+export const departmentApi = {
+  list: (params) => api.get('/departments', { params }),
+  create: (data) => api.post('/departments', data),
+  update: (id, data) => api.put(`/departments/${id}`, data),
+  delete: (id) => api.delete(`/departments/${id}`),
+}
+
+export const positionApi = {
+  list: () => api.get('/positions'),
+  create: (data) => api.post('/positions', data),
+  update: (id, data) => api.put(`/positions/${id}`, data),
+  delete: (id) => api.delete(`/positions/${id}`),
+  ppeNorms: (id) => api.get(`/positions/${id}/ppe-norms`),
+  updatePpeNorms: (id, norms) => api.put(`/positions/${id}/ppe-norms`, { norms }),
+}
+
+export const ppeItemApi = {
+  list: () => api.get('/ppe-items'),
+  create: (data) => api.post('/ppe-items', data),
+  update: (id, data) => api.put(`/ppe-items/${id}`, data),
+  delete: (id) => api.delete(`/ppe-items/${id}`),
+}
+
+export const employeeApi = {
+  list: (params) => api.get('/employees', { params }),
+  create: (data) => api.post('/employees', data),
+  show: (id) => api.get(`/employees/${id}`),
+  update: (id, data) => api.put(`/employees/${id}`, data),
+  delete: (id) => api.delete(`/employees/${id}`),
+  photo: (id) => api.get(`/employees/${id}/photo`, { responseType: 'blob' }),
+  uploadPhoto: (id, file) => {
+    const form = new FormData()
+    form.append('photo', file)
+    return api.post(`/employees/${id}/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  history: (id, params) => api.get(`/employees/${id}/history`, { params }),
+  events: (id) => api.get(`/employees/${id}/events`),
+  addEvent: (id, data) => api.post(`/employees/${id}/events`, data),
+  cancelEvent: (eventId, reason) => api.post(`/employment-events/${eventId}/cancel`, { reason }),
+  absences: (id, params) => api.get(`/employees/${id}/absences`, { params }),
+  addAbsence: (id, data) => api.post(`/employees/${id}/absences`, data),
+  updateAbsence: (absenceId, data) => api.put(`/absences/${absenceId}`, data),
+  deleteAbsence: (absenceId) => api.delete(`/absences/${absenceId}`),
+  leaveBalance: (id, year) => api.get(`/employees/${id}/leave-balance`, { params: { year } }),
+  medicalExams: (id) => api.get(`/employees/${id}/medical-exams`),
+  addMedicalExam: (id, form) => api.post(`/employees/${id}/medical-exams`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // PUT cannot carry multipart files in PHP, so updates are sent as POST with _method=PUT.
+  updateMedicalExam: (examId, form) => {
+    form.append('_method', 'PUT')
+    return api.post(`/medical-exams/${examId}`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  deleteMedicalExam: (examId) => api.delete(`/medical-exams/${examId}`),
+  medicalDocument: (examId) => api.get(`/medical-exams/${examId}/document`, { responseType: 'blob' }),
+  ppe: (id) => api.get(`/employees/${id}/ppe`),
+  issuePpe: (id, data) => api.post(`/employees/${id}/ppe-issues`, data),
+  closePpeIssue: (issueId, data) => api.post(`/ppe-issues/${issueId}/close`, data),
+  importTemplate: () => api.get('/employees/import-template', { responseType: 'blob' }),
+  import: (file, dryRun) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('dry_run', dryRun ? '1' : '0')
+    return api.post('/employees/import', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+}
+
+export const medicalExamApi = {
+  list: (params) => api.get('/medical-exams', { params }),
+}
+
+export const briefingApi = {
+  list: (params) => api.get('/safety-briefings', { params }),
+  show: (id) => api.get(`/safety-briefings/${id}`),
+  create: (data) => api.post('/safety-briefings', data),
+  update: (id, data) => api.put(`/safety-briefings/${id}`, data),
+  delete: (id) => api.delete(`/safety-briefings/${id}`),
+}
+
+export const hrAlertApi = {
+  list: (params) => api.get('/hr/alerts', { params }),
+  summary: () => api.get('/hr/alerts/summary'),
+}
+
+export const hrReportApi = {
+  headcount: (params) => api.get('/hr/reports/headcount', { params }),
+  movement: (params) => api.get('/hr/reports/movement', { params }),
+  absent: (params) => api.get('/hr/reports/absent', { params }),
+  leaveSchedule: (params) => api.get('/hr/reports/leave-schedule', { params }),
+  briefingJournal: (params) => api.get('/hr/reports/briefing-journal', { params }),
+  ppeIssues: (params) => api.get('/hr/reports/ppe-issues', { params }),
+  ppeDemand: (params) => api.get('/hr/reports/ppe-demand', { params }),
+}
+
+export const auditLogApi = {
+  list: (params) => api.get('/audit-logs', { params }),
 }

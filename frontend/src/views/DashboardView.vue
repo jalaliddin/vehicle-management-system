@@ -2,8 +2,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { dashboardApi } from '@/services/api'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import AlertsSummaryCard from '@/components/hr/AlertsSummaryCard.vue'
 
 const router = useRouter()
+const auth = useAuthStore()
 const stats = ref(null)
 const loading = ref(true)
 
@@ -118,6 +121,8 @@ const fuelBg   = (p) => p < 20 ? '#FEE2E2' : p < 50 ? '#FEF3C7' : '#D1FAE5'
           </div>
         </div>
       </div>
+
+      <AlertsSummaryCard v-if="auth.canAny(['ohs.view', 'employees.view'])" />
 
       <!-- Row 2 -->
       <div class="content-row">
