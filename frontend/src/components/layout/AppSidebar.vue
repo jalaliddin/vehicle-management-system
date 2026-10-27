@@ -42,8 +42,12 @@ const sections = computed(() => {
       label: "Yoqilg'i",
       items: [
         { title: 'Monitoring', to: '/fuel/monitoring', icon: 'mdi-gauge-full', permission: 'fuel.view' },
+        { title: "Yoqilg'i quyish", to: '/fuel/station', icon: 'mdi-fuel', permission: 'fuel.transactions.create' },
         { title: 'Shahobchalar', to: '/fuel/stations', icon: 'mdi-gas-station', permission: 'fuel.view' },
+        { title: 'Smenalar', to: '/fuel/shifts', icon: 'mdi-account-clock', permission: 'fuel.view' },
         { title: 'Harakatlar', to: '/fuel/transactions', icon: 'mdi-swap-horizontal-bold', permission: 'fuel.view' },
+        { title: 'Yetkazib beruvchilar', to: '/fuel/suppliers', icon: 'mdi-truck-delivery', permission: 'fuel.stations.manage' },
+        { title: 'Hisobotlar', to: '/fuel/reports', icon: 'mdi-chart-line', permission: 'fuel.view' },
       ],
     },
     {

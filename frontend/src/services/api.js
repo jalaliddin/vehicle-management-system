@@ -80,8 +80,32 @@ export const fuelApi = {
   stations: () => api.get('/fuel/stations'),
   createStation: (data) => api.post('/fuel/stations', data),
   updateStation: (id, data) => api.put(`/fuel/stations/${id}`, data),
-  addTransaction: (stationId, data) => api.post(`/fuel/stations/${stationId}/transaction`, data),
+  assignFuelers: (stationId, userIds) => api.put(`/fuel/stations/${stationId}/fuelers`, { user_ids: userIds }),
   transactions: (params) => api.get('/fuel/transactions', { params }),
+  currentShift: (stationId) => api.get(`/fuel/stations/${stationId}/current-shift`),
+  openShift: (stationId, openingMeasured) => api.post(`/fuel/stations/${stationId}/shifts`, { opening_measured: openingMeasured }),
+  closeShift: (shiftId, data) => api.post(`/fuel/shifts/${shiftId}/close`, data),
+  shifts: (params) => api.get('/fuel/shifts', { params }),
+  shift: (shiftId) => api.get(`/fuel/shifts/${shiftId}`),
+  vehicles: (stationId, search) => api.get(`/fuel/stations/${stationId}/vehicles`, { params: { search } }),
+  receive: (stationId, data) => api.post(`/fuel/stations/${stationId}/receipts`, data),
+  refuel: (stationId, data) => api.post(`/fuel/stations/${stationId}/refuels`, data),
+  cancel: (transactionId, reason) => api.post(`/fuel/transactions/${transactionId}/cancel`, { reason }),
+  adjust: (stationId, data) => api.post(`/fuel/stations/${stationId}/adjustments`, data),
+}
+
+export const fuelSupplierApi = {
+  list: () => api.get('/fuel/suppliers'),
+  create: (data) => api.post('/fuel/suppliers', data),
+  update: (id, data) => api.put(`/fuel/suppliers/${id}`, data),
+  delete: (id) => api.delete(`/fuel/suppliers/${id}`),
+}
+
+export const fuelReportApi = {
+  turnover: (params) => api.get('/fuel/reports/turnover', { params }),
+  refuels: (params) => api.get('/fuel/reports/refuels', { params }),
+  consumption: (params) => api.get('/fuel/reports/consumption', { params }),
+  discrepancies: (params) => api.get('/fuel/reports/discrepancies', { params }),
 }
 
 export const fuelNormApi = {

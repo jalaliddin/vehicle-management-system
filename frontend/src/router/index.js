@@ -39,6 +39,10 @@ const routes = [
 
       { path: 'fuel/monitoring', name: 'fuel.monitoring', component: () => import('@/views/fuel/FuelMonitoringView.vue'), meta: { permission: 'fuel.view' } },
       { path: 'fuel/stations', name: 'fuel.stations', component: () => import('@/views/fuel/FuelStationView.vue'), meta: { permission: 'fuel.view' } },
+      { path: 'fuel/station', name: 'fuel.desk', component: () => import('@/views/fuel/FuelDeskView.vue'), meta: { permission: 'fuel.transactions.create' } },
+      { path: 'fuel/shifts', name: 'fuel.shifts', component: () => import('@/views/fuel/FuelShiftListView.vue'), meta: { permission: 'fuel.view' } },
+      { path: 'fuel/suppliers', name: 'fuel.suppliers', component: () => import('@/views/fuel/FuelSupplierView.vue'), meta: { permission: 'fuel.stations.manage' } },
+      { path: 'fuel/reports', name: 'fuel.reports', component: () => import('@/views/fuel/FuelReportsView.vue'), meta: { permission: 'fuel.view' } },
       { path: 'fuel/transactions', name: 'fuel.transactions', component: () => import('@/views/fuel/FuelTransactionView.vue'), meta: { permission: 'fuel.view' } },
 
       { path: 'employees', name: 'employees', component: () => import('@/views/hr/EmployeeListView.vue'), meta: { permission: 'employees.view' } },
