@@ -14,6 +14,13 @@ class MedicalExam extends Model
     /** @use HasFactory<MedicalExamFactory> */
     use Auditable, HasFactory;
 
+    /**
+     * Fields only users with ohs.medical.view may see — in responses and in the audit log.
+     *
+     * @var list<string>
+     */
+    public const MEDICAL_DETAILS = ['institution', 'result', 'restrictions', 'notes', 'document_path'];
+
     protected $fillable = [
         'employee_id',
         'type',

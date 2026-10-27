@@ -33,12 +33,9 @@ class MedicalExamResource extends JsonResource
                 'full_name' => $this->employee->full_name,
                 'organization_id' => $this->employee->organization_id,
             ]),
-        ], $canSeeDetails ? [
-            'institution' => $this->institution,
-            'result' => $this->result,
-            'restrictions' => $this->restrictions,
-            'notes' => $this->notes,
-            'has_document' => $this->document_path !== null,
-        ] : []);
+        ], $canSeeDetails ? array_merge(
+            $this->resource->only(array_diff(MedicalExam::MEDICAL_DETAILS, ['document_path'])),
+            ['has_document' => $this->document_path !== null],
+        ) : []);
     }
 }

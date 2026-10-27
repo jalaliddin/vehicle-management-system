@@ -161,6 +161,22 @@ class AuditLogTest extends TestCase
             ->where('auditable_id', $exam->id)->value('organization_id'));
     }
 
+    public function test_medical_details_in_the_log_need_medical_view(): void
+    {
+        $organization = Organization::factory()->create();
+        $employee = Employee::factory()->create(['organization_id' => $organization->id]);
+        MedicalExam::factory()->for($employee)->create(['restrictions' => 'Tungi ish taqiqlangan']);
+
+        Sanctum::actingAs(User::factory()->withPermissions(Permission::AuditView, Permission::EmployeesView)->create(['organization_id' => $organization->id]));
+        $history = json_encode($this->getJson("/api/employees/{$employee->id}/history")->assertOk()->json('data'));
+        $log = json_encode($this->getJson('/api/audit-logs')->assertOk()->json('data'));
+        $this->assertStringNotContainsString('Tungi ish', $history);
+        $this->assertStringNotContainsString('Tungi ish', $log);
+
+        Sanctum::actingAs(User::factory()->withPermissions(Permission::AuditView, Permission::EmployeesView, Permission::OhsMedicalView)->create(['organization_id' => $organization->id]));
+        $this->assertStringContainsString('Tungi ish', json_encode($this->getJson("/api/employees/{$employee->id}/history")->json('data')));
+    }
+
     public function test_audit_log_endpoint_filters_by_employee_id(): void
     {
         AuditedThing::create(['name' => 'first', 'employee_id' => 1]);

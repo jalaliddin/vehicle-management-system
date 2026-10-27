@@ -35,7 +35,8 @@ class AuditLogController extends Controller
             ->when($request->from, fn ($q) => $q->where('created_at', '>=', $request->date('from')->startOfDay()))
             ->when($request->to, fn ($q) => $q->where('created_at', '<=', $request->date('to')->endOfDay()))
             ->latest('id')
-            ->paginate(50);
+            ->paginate(50)
+            ->through(fn (AuditLog $log) => $log->visibleTo($user));
 
         return response()->json($logs);
     }

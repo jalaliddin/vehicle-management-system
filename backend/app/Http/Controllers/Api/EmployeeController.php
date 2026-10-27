@@ -150,8 +150,11 @@ class EmployeeController extends Controller
     {
         Gate::authorize('viewHistory', $employee);
 
+        $user = request()->user();
+
         return response()->json(
             AuditLog::with('user:id,name')->where('employee_id', $employee->id)->latest('id')->paginate(50)
+                ->through(fn (AuditLog $log) => $log->visibleTo($user))
         );
     }
 

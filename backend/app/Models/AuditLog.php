@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Permission;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -60,6 +61,23 @@ class AuditLog extends Model
             'new_values' => $new,
             'ip_address' => app()->runningInConsole() ? null : request()->ip(),
         ]);
+    }
+
+    /**
+     * The entry as the given user may see it: medical details stay hidden
+     * from users without ohs.medical.view.
+     */
+    public function visibleTo(User $user): self
+    {
+        if ($this->auditable_type !== (new MedicalExam)->getMorphClass()
+            || $user->isSuperAdmin() || $user->hasPermission(Permission::OhsMedicalView)) {
+            return $this;
+        }
+
+        $hidden = array_flip(MedicalExam::MEDICAL_DETAILS);
+
+        return $this->setAttribute('old_values', $this->old_values === null ? null : array_diff_key($this->old_values, $hidden))
+            ->setAttribute('new_values', $this->new_values === null ? null : array_diff_key($this->new_values, $hidden));
     }
 
     public function user(): BelongsTo
