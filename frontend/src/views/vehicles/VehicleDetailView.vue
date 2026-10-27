@@ -1,4 +1,5 @@
 <script setup>
+import { unitOf } from '@/utils/fuel'
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { vehicleApi } from '@/services/api'
@@ -62,6 +63,14 @@ onMounted(async () => {
             <v-col cols="6" md="3">
               <div class="text-caption text-medium-emphasis">Yoqilg'i me'yori</div>
               <div class="text-body-2 font-weight-medium">{{ vehicle.fuel_norm }} L/100km</div>
+            </v-col>
+            <v-col cols="6" md="3">
+              <div class="text-caption text-medium-emphasis">Bak hajmi</div>
+              <div class="text-body-2 font-weight-medium">{{ vehicle.tank_capacity ? `${Number(vehicle.tank_capacity)} ${unitOf(vehicle.fuel_type)}` : '—' }}</div>
+            </v-col>
+            <v-col cols="6" md="3">
+              <div class="text-caption text-medium-emphasis">Spidometr</div>
+              <div class="text-body-2 font-weight-medium">{{ vehicle.odometer != null ? `${vehicle.odometer.toLocaleString('uz-UZ')} km` : '—' }}</div>
             </v-col>
             <v-col cols="6" md="3">
               <div class="text-caption text-medium-emphasis">Rang</div>

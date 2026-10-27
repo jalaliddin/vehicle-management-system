@@ -1,4 +1,5 @@
 <script setup>
+import { quantity, unitOf } from '@/utils/fuel'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { waybillApi } from '@/services/api'
@@ -291,6 +292,15 @@ onMounted(load)
                     :style="`width:${Math.min(fuelPct,100)}%; background:${fuelPct > 100 ? '#EF4444' : '#10B981'}`" />
                 </div>
                 <span class="fuel-bar-label">{{ fuelPct }}%</span>
+              </div>
+              <div v-if="waybill.refuels?.length" class="refuels">
+                <div class="info-key mb-1">Quyilgan yoqilg'i</div>
+                <div v-for="refuel in waybill.refuels" :key="refuel.id" class="refuel-row">
+                  <span>{{ new Date(refuel.created_at).toLocaleString('uz-UZ') }}</span>
+                  <span>{{ refuel.fuel_station?.name }}</span>
+                  <span>{{ refuel.odometer ?? '—' }} km</span>
+                  <b>{{ quantity(refuel.amount) }} {{ unitOf(refuel.fuel_type) }}</b>
+                </div>
               </div>
             </div>
 
@@ -671,4 +681,6 @@ onMounted(load)
   .doc-footer { border-top: 1px solid #E2E8F0 !important; }
   .sign-boxes { display: flex !important; }
 }
+.refuels { margin-top: 12px; }
+.refuel-row { display: grid; grid-template-columns: 1.4fr 1.4fr 1fr auto; gap: 8px; font-size: 13px; padding: 6px 0; border-top: 1px solid #F1F5F9; }
 </style>

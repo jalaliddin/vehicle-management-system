@@ -22,6 +22,8 @@ const form = ref({
   vehicle_type: 'car',
   fuel_type: 'benzin',
   fuel_norm: '',
+  tank_capacity: '',
+  odometer: '',
   fuel_norm_ac: '',
   color: '',
   engine_power: '',
@@ -204,6 +206,18 @@ onMounted(load)
                 <label>AC bilan me'yor (L/100km)</label>
                 <v-text-field v-model="form.fuel_norm_ac" type="number" placeholder="10.0"
                   prepend-inner-icon="mdi-air-conditioner" variant="outlined" density="comfortable" rounded="lg" hide-details />
+              </div>
+            </div>
+            <div class="field-row three-col">
+              <div class="field-item">
+                <label>Bak hajmi</label>
+                <v-text-field v-model="form.tank_capacity" type="number" placeholder="60"
+                  prepend-inner-icon="mdi-fuel" variant="outlined" density="comfortable" rounded="lg" hide-details />
+              </div>
+              <div class="field-item">
+                <label>Spidometr (km)</label>
+                <v-text-field v-model="form.odometer" type="number" placeholder="125000"
+                  prepend-inner-icon="mdi-counter" variant="outlined" density="comfortable" rounded="lg" hide-details />
               </div>
             </div>
           </div>
