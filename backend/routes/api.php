@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\EmployeePpeController;
 use App\Http\Controllers\Api\EmploymentEventController;
 use App\Http\Controllers\Api\FuelController;
 use App\Http\Controllers\Api\FuelNormController;
+use App\Http\Controllers\Api\HrAlertController;
 use App\Http\Controllers\Api\MedicalExamController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PositionController;
@@ -44,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/vehicles/{vehicle}/status', [VehicleController::class, 'updateStatus']);
     Route::apiResource('drivers', DriverController::class);
     Route::post('/drivers/{driver}/assign', [DriverController::class, 'assignVehicle']);
+    Route::get('/drivers/{driver}/clearance', [DriverController::class, 'clearance']);
     Route::apiResource('waybills', WaybillController::class);
     Route::apiResource('fuel-norms', FuelNormController::class);
 
@@ -106,4 +108,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('medical-exams/{exam}/document', [MedicalExamController::class, 'document']);
     Route::apiResource('safety-briefings', SafetyBriefingController::class);
     Route::post('ppe-issues/{issue}/close', [EmployeePpeController::class, 'close']);
+    Route::get('hr/alerts', [HrAlertController::class, 'index']);
+    Route::get('hr/alerts/summary', [HrAlertController::class, 'summary']);
 });

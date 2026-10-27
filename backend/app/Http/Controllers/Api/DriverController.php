@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Employee;
+use App\Services\Hr\DriverClearance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -13,6 +14,8 @@ use Illuminate\Validation\Rules\Exists;
 
 class DriverController extends Controller
 {
+    public function __construct(private DriverClearance $clearance) {}
+
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Driver::class);
@@ -71,7 +74,17 @@ class DriverController extends Controller
     {
         Gate::authorize('view', $driver);
 
-        return response()->json($driver->load(['organization', 'vehicle', 'waybills' => fn ($q) => $q->latest()->take(10)]));
+        return response()->json(array_merge(
+            $driver->load(['organization', 'vehicle', 'waybills' => fn ($q) => $q->latest()->take(10)])->toArray(),
+            ['clearance' => $this->clearance->check($driver)],
+        ));
+    }
+
+    public function clearance(Driver $driver): JsonResponse
+    {
+        Gate::authorize('view', $driver);
+
+        return response()->json($this->clearance->check($driver));
     }
 
     public function update(Request $request, Driver $driver): JsonResponse

@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
             Gate::define($permission->value, fn (User $user) => $user->hasPermission($permission));
         }
 
+        Gate::define('view-hr-alerts', fn (User $user) => $user->hasAnyPermission(Permission::OhsView, Permission::EmployeesView));
+
         Gate::define('access-organization', fn (User $user, ?int $organizationId) => $user->canAccessOrganization($organizationId));
     }
 }
