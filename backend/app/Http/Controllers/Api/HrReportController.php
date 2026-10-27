@@ -64,7 +64,8 @@ class HrReportController extends Controller
     }
 
     /**
-     * Hire, transfer and dismissal orders that took effect in the period.
+     * Hire, transfer and dismissal orders that took effect in the period, by the
+     * organization the order placed the employee in.
      */
     public function movement(Request $request): JsonResponse
     {
@@ -75,7 +76,8 @@ class HrReportController extends Controller
         $events = EmploymentEvent::with(['employee', 'organization:id,short_name', 'department:id,name', 'position:id,name'])
             ->whereNull('cancelled_at')
             ->whereBetween('effective_date', [$from->toDateString(), $to->toDateString()])
-            ->whereHas('employee', fn ($q) => $this->scope($q, $request))
+            ->when(! $request->user()->canAccessAllOrganizations(), fn ($q) => $q->where('organization_id', $request->user()->organization_id ?? 0))
+            ->when($request->organization_id, fn ($q) => $q->where('organization_id', $request->organization_id))
             ->orderBy('effective_date')
             ->get()
             ->map(fn (EmploymentEvent $event) => [

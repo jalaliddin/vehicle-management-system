@@ -97,6 +97,21 @@ class HrReportTest extends TestCase
             ->assertJsonPath('transferred.0.department', 'Ofis');
     }
 
+    public function test_movement_belongs_to_the_organization_of_the_order(): void
+    {
+        $other = Organization::factory()->create();
+        $employee = Employee::factory()->create(['organization_id' => $other->id]);
+        EmploymentEvent::factory()->for($employee)->create(['type' => 'hire', 'effective_date' => '2026-02-01', 'organization_id' => $this->organization->id]);
+        EmploymentEvent::factory()->for($employee)->create(['type' => 'transfer', 'effective_date' => '2026-05-01', 'organization_id' => $other->id]);
+
+        $this->getJson("/api/hr/reports/movement?from=2026-01-01&to=2026-06-30&organization_id={$this->organization->id}")
+            ->assertOk()
+            ->assertJsonPath('counts', ['hired' => 1, 'transferred' => 0, 'dismissed' => 0]);
+        $this->getJson("/api/hr/reports/movement?from=2026-01-01&to=2026-06-30&organization_id={$other->id}")
+            ->assertOk()
+            ->assertJsonPath('counts', ['hired' => 0, 'transferred' => 1, 'dismissed' => 0]);
+    }
+
     public function test_absent_lists_who_is_away_on_the_date(): void
     {
         $employee = Employee::factory()->create(['organization_id' => $this->organization->id]);
