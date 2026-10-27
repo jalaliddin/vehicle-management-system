@@ -6,6 +6,7 @@ use App\Models\FuelStation;
 use App\Models\FuelTransaction;
 use App\Models\Role;
 use App\Support\Fuel\OpeningBalances;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
@@ -33,6 +34,16 @@ class FuelSchemaTest extends TestCase
             $row->fuel_station_id, $row->kind, $row->type, $row->amount, $row->document_number,
         ]);
         $this->assertSame(0, OpeningBalances::record());
+    }
+
+    public function test_seeded_stations_start_with_opening_balance_rows(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        foreach (FuelStation::all() as $station) {
+            $this->assertSame($station->current_balance, $station->transactions()
+                ->where('document_number', FuelTransaction::OPENING_DOCUMENT)->sole()->amount);
+        }
     }
 
     public function test_station_unit_comes_from_config(): void

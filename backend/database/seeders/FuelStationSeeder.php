@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\FuelStation;
+use App\Support\Fuel\OpeningBalances;
 use Illuminate\Database\Seeder;
 
 class FuelStationSeeder extends Seeder
@@ -25,5 +26,7 @@ class FuelStationSeeder extends Seeder
         foreach ($stations as $station) {
             FuelStation::create($station);
         }
+
+        OpeningBalances::record();
     }
 }

@@ -80,6 +80,14 @@ return new class extends Migration
             $table->dropColumn(['tank_capacity', 'odometer']);
         });
 
+        // MySQL silently drops a foreign key's own index once a composite index
+        // starting with the same column can serve it, so give it back first.
+        foreach (['fuel_station_id', 'vehicle_id'] as $column) {
+            if (! Schema::hasIndex('fuel_transactions', "fuel_transactions_{$column}_foreign")) {
+                Schema::table('fuel_transactions', fn (Blueprint $table) => $table->index($column, "fuel_transactions_{$column}_foreign"));
+            }
+        }
+
         Schema::table('fuel_transactions', function (Blueprint $table) {
             $table->dropIndex(['fuel_station_id', 'created_at']);
             $table->dropIndex(['vehicle_id', 'kind']);
