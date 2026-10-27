@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Position;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Support\Hr\DriverEmployeeBackfill;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -266,6 +267,27 @@ class EmploymentEventTest extends TestCase
         $this->postJson("/api/employees/{$employee->id}/events", $this->order('hire', extra: ['position_id' => $this->position->id]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('type');
+    }
+
+    public function test_backfilled_driver_can_be_transferred_dismissed_and_restored(): void
+    {
+        $this->actingAsHr();
+        $driver = Driver::factory()->create(['organization_id' => $this->organization->id, 'employee_id' => null]);
+        $driver->forceFill(['created_at' => now()->subYear()])->save();
+        DriverEmployeeBackfill::run();
+        $employee = $driver->fresh()->employee;
+
+        $this->postJson("/api/employees/{$employee->id}/events", $this->order('transfer', '-2 months', ['department_id' => $this->department->id]))
+            ->assertCreated();
+        $dismissalId = $this->postJson("/api/employees/{$employee->id}/events", $this->order('dismissal', '-1 month', ['dismissal_reason' => 'own_wish']))
+            ->assertCreated()->json('id');
+
+        $this->postJson("/api/employment-events/{$dismissalId}/cancel", ['reason' => 'Xato'])->assertOk();
+
+        $employee->refresh();
+        $this->assertSame('active', $employee->status);
+        $this->assertNull($employee->dismissal_date);
+        $this->assertSame($this->department->id, $employee->department_id);
     }
 
     public function test_events_are_listed_newest_first(): void

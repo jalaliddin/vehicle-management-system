@@ -33,6 +33,20 @@ class DriverEmployeeBackfillTest extends TestCase
         $this->assertSame(1, Position::where('name', 'Haydovchi')->count());
     }
 
+    public function test_writes_a_baseline_hire_event_dated_when_the_driver_was_registered(): void
+    {
+        $driver = Driver::factory()->create(['employee_id' => null]);
+        $driver->forceFill(['created_at' => '2025-03-01 10:00:00'])->save();
+
+        DriverEmployeeBackfill::run();
+
+        $employee = $driver->fresh()->employee;
+        $this->assertSame(['hire'], $employee->events()->pluck('type')->all());
+        $this->assertSame('2025-03-01', $employee->events()->first()->effective_date->toDateString());
+        $this->assertSame($driver->organization_id, $employee->events()->first()->organization_id);
+        $this->assertSame('2025-03-01', $employee->hire_date->toDateString());
+    }
+
     public function test_splits_messy_names(): void
     {
         $three = Driver::factory()->create(['employee_id' => null, 'full_name' => '  Karimov   Anvar  Olimovich ']);
