@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Permission;
+use App\Models\Concerns\Auditable;
 use Database\Factories\RoleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Role extends Model
 {
     /** @use HasFactory<RoleFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     public const SUPER_ADMIN = 'superadmin';
 
@@ -66,6 +67,7 @@ class Role extends Model
     public function syncPermissions(array $permissions): void
     {
         $permissions = array_values(array_unique($permissions));
+        $before = $this->permissions()->orderBy('permission')->pluck('permission')->all();
 
         $this->permissions()->whereNotIn('permission', $permissions)->delete();
 
@@ -77,5 +79,11 @@ class Role extends Model
         ));
 
         $this->unsetRelation('permissions');
+
+        $after = $this->permissions()->orderBy('permission')->pluck('permission')->all();
+
+        if ($before !== $after) {
+            AuditLog::record($this, 'permissions_synced', ['permissions' => $before], ['permissions' => $after]);
+        }
     }
 }

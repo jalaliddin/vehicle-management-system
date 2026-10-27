@@ -6,7 +6,10 @@ use App\Enums\Permission;
 use App\Models\AuditLog;
 use App\Models\Concerns\Auditable;
 use App\Models\Organization;
+use App\Models\Role;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Waybill;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -43,7 +46,7 @@ class AuditLogTest extends TestCase
         $thing->update(['name' => 'B']);
         $thing->delete();
 
-        $entries = AuditLog::orderBy('id')->get();
+        $entries = AuditLog::where('auditable_type', AuditedThing::class)->orderBy('id')->get();
 
         $this->assertSame(['created', 'updated', 'deleted'], $entries->pluck('event')->all());
         $this->assertSame(['name' => 'A'], $entries[1]->old_values);
@@ -63,7 +66,7 @@ class AuditLogTest extends TestCase
         $thing = AuditedThing::create(['name' => 'A']);
         $thing->update(['name' => 'A']);
 
-        $this->assertSame(1, AuditLog::count());
+        $this->assertSame(1, AuditLog::where('auditable_type', AuditedThing::class)->count());
     }
 
     public function test_audit_entries_cannot_be_changed(): void
@@ -82,6 +85,40 @@ class AuditLogTest extends TestCase
         $entry->delete();
     }
 
+    public function test_existing_models_are_audited(): void
+    {
+        $waybill = Waybill::factory()->create();
+        $vehicle = Vehicle::factory()->create();
+
+        $waybill->update(['destination' => 'Xiva']);
+        $vehicle->update(['status' => 'maintenance']);
+
+        $this->assertTrue(AuditLog::where('auditable_type', Waybill::class)->where('event', 'updated')
+            ->where('auditable_id', $waybill->id)->exists());
+        $this->assertSame(['status' => 'maintenance'], AuditLog::where('auditable_type', Vehicle::class)
+            ->where('event', 'updated')->latest('id')->first()->new_values);
+    }
+
+    public function test_user_password_is_never_logged(): void
+    {
+        $user = User::factory()->create();
+        $user->update(['password' => 'new-secret', 'name' => 'Yangi ism']);
+
+        $entry = AuditLog::where('auditable_type', User::class)->where('event', 'updated')->latest('id')->firstOrFail();
+        $this->assertSame(['name' => 'Yangi ism'], $entry->new_values);
+    }
+
+    public function test_role_permission_changes_are_audited(): void
+    {
+        $role = Role::factory()->withPermissions(Permission::VehiclesView)->create();
+
+        $role->syncPermissions(['vehicles.view', 'drivers.view']);
+
+        $entry = AuditLog::where('auditable_type', Role::class)->where('event', 'permissions_synced')->latest('id')->firstOrFail();
+        $this->assertSame(['vehicles.view'], $entry->old_values['permissions']);
+        $this->assertSame(['drivers.view', 'vehicles.view'], $entry->new_values['permissions']);
+    }
+
     public function test_audit_log_endpoint_requires_audit_view(): void
     {
         Sanctum::actingAs(User::factory()->withRole('viewer')->create());
@@ -98,10 +135,11 @@ class AuditLogTest extends TestCase
 
         Sanctum::actingAs(User::factory()->withPermissions(Permission::AuditView)->create(['organization_id' => $own->id]));
 
-        $this->getJson('/api/audit-logs')
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.new_values.name', 'mine');
+        $entries = collect($this->getJson('/api/audit-logs')->assertOk()->json('data'));
+
+        $this->assertSame([$own->id], $entries->pluck('organization_id')->unique()->values()->all());
+        $this->assertContains('mine', $entries->pluck('new_values.name'));
+        $this->assertNotContains('theirs', $entries->pluck('new_values.name'));
     }
 
     public function test_audit_log_endpoint_filters_by_employee_id(): void
