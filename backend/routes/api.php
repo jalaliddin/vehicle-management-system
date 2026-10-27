@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('stations', [FuelController::class, 'stationIndex']);
         Route::post('stations', [FuelController::class, 'stationStore']);
         Route::put('stations/{station}', [FuelController::class, 'stationUpdate']);
+        Route::get('stations/{station}/fueler-candidates', [FuelController::class, 'fuelerCandidates']);
         Route::put('stations/{station}/fuelers', [FuelController::class, 'assignFuelers']);
         Route::apiResource('suppliers', FuelSupplierController::class)->except('show');
         Route::get('stations/{station}/current-shift', [FuelShiftController::class, 'current']);

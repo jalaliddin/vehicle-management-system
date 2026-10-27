@@ -112,6 +112,25 @@ class FuelController extends Controller
     }
 
     /**
+     * Users of the station's organization who may operate it.
+     */
+    public function fuelerCandidates(FuelStation $station): JsonResponse
+    {
+        Gate::authorize('update', $station);
+
+        $users = User::with('role.permissions')
+            ->where('organization_id', $station->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (User $user) => $user->hasPermission(Permission::FuelTransactionsCreate))
+            ->map(fn (User $user) => $user->only(['id', 'name', 'email']))
+            ->values();
+
+        return response()->json($users);
+    }
+
+    /**
      * Replace the fuelers assigned to the station.
      */
     public function assignFuelers(Request $request, FuelStation $station): JsonResponse

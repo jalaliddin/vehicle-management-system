@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { fuelApi, organizationApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import { errorMessage } from '@/utils/hr'
+import { quantity } from '@/utils/fuel'
+import { useSnack } from '@/utils/useSnack'
 
 const auth = useAuthStore()
 
@@ -9,12 +12,16 @@ const stations = ref([])
 const organizations = ref([])
 const loading = ref(true)
 const createDialog = ref(false)
-const txDialog = ref(false)
 const selectedStation = ref(null)
 const saving = ref(false)
+const { snack, notify } = useSnack()
+const fuelersDialog = ref(false)
+const candidates = ref([])
+const fuelerIds = ref([])
+const adjustDialog = ref(false)
+const adjustForm = ref({})
 
 const form = ref({ organization_id: null, name: '', fuel_type: 'benzin', capacity: '', current_balance: 0, min_threshold: 500 })
-const txForm = ref({ type: 'in', amount: '', notes: '' })
 
 async function load() {
   loading.value = true
@@ -36,12 +43,42 @@ async function createStation() {
   }
 }
 
-async function addTx() {
+async function openFuelers(station) {
+  selectedStation.value = station
+  candidates.value = (await fuelApi.fuelerCandidates(station.id)).data
+  fuelerIds.value = (station.fuelers || []).map(f => f.id)
+  fuelersDialog.value = true
+}
+
+async function saveFuelers() {
   saving.value = true
   try {
-    await fuelApi.addTransaction(selectedStation.value.id, txForm.value)
-    txDialog.value = false
+    await fuelApi.assignFuelers(selectedStation.value.id, fuelerIds.value)
+    fuelersDialog.value = false
+    notify('Quyuvchilar saqlandi')
     load()
+  } catch (e) {
+    notify(errorMessage(e), 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+function openAdjust(station) {
+  selectedStation.value = station
+  adjustForm.value = { actual_balance: null, document_number: '', notes: '' }
+  adjustDialog.value = true
+}
+
+async function saveAdjust() {
+  saving.value = true
+  try {
+    await fuelApi.adjust(selectedStation.value.id, adjustForm.value)
+    adjustDialog.value = false
+    notify('Inventarizatsiya akti saqlandi')
+    load()
+  } catch (e) {
+    notify(errorMessage(e), 'error')
   } finally {
     saving.value = false
   }
@@ -51,9 +88,10 @@ const headers = [
   { title: 'Tashkilot', key: 'organization.short_name' },
   { title: 'Nomi', key: 'name' },
   { title: "Yoqilg'i", key: 'fuel_type', width: 100 },
-  { title: 'Sig\'im (L)', key: 'capacity', width: 110 },
-  { title: 'Qoldiq (L)', key: 'current_balance', width: 110 },
+  { title: "Sig'im", key: 'capacity', width: 110 },
+  { title: 'Qoldiq', key: 'current_balance', width: 120 },
   { title: '%', key: 'percentage', width: 100 },
+  { title: 'Quyuvchilar', key: 'fuelers', sortable: false },
   { title: 'Amallar', key: 'actions', sortable: false, width: 120, align: 'center' },
 ]
 
@@ -76,8 +114,12 @@ onMounted(load)
     <v-card rounded="xl" class="border">
       <v-card-text class="pa-4">
         <v-data-table :headers="headers" :items="stations" :loading="loading" hover rounded="xl">
-          <template #item.capacity="{ item }">{{ Number(item.capacity).toLocaleString() }}</template>
-          <template #item.current_balance="{ item }">{{ Number(item.current_balance).toLocaleString() }}</template>
+          <template #item.capacity="{ item }">{{ quantity(item.capacity) }} {{ item.unit }}</template>
+          <template #item.current_balance="{ item }">{{ quantity(item.current_balance) }} {{ item.unit }}</template>
+          <template #item.fuelers="{ item }">
+            <span v-if="!item.fuelers?.length" class="text-medium-emphasis">—</span>
+            <v-chip v-for="f in item.fuelers" :key="f.id" size="x-small" class="mr-1">{{ f.name }}</v-chip>
+          </template>
           <template #item.percentage="{ item }">
             <div class="d-flex align-center gap-2">
               <v-progress-linear :model-value="item.percentage"
@@ -87,9 +129,8 @@ onMounted(load)
             </div>
           </template>
           <template #item.actions="{ item }">
-            <v-btn v-if="auth.can('fuel.transactions.create')" size="small" variant="flat" color="primary" rounded="lg" @click="selectedStation = item; txForm = { type: 'in', amount: '', notes: '' }; txDialog = true">
-              Kirim/Chiqim
-            </v-btn>
+            <v-btn v-if="auth.can('fuel.stations.manage')" icon size="small" variant="text" title="Quyuvchilar" @click="openFuelers(item)"><v-icon size="18">mdi-account-hard-hat</v-icon></v-btn>
+            <v-btn v-if="auth.can('fuel.adjust')" icon size="small" variant="text" title="Inventarizatsiya" @click="openAdjust(item)"><v-icon size="18">mdi-clipboard-check-outline</v-icon></v-btn>
           </template>
         </v-data-table>
       </v-card-text>
@@ -116,24 +157,41 @@ onMounted(load)
       </v-card>
     </v-dialog>
 
-    <!-- Transaction Dialog -->
-    <v-dialog v-model="txDialog" max-width="420">
+    <v-dialog v-model="fuelersDialog" max-width="480">
       <v-card rounded="xl">
-        <v-card-title class="pa-5 pb-2">Kirim / Chiqim — {{ selectedStation?.name }}</v-card-title>
+        <v-card-title class="pa-5 pb-2">Quyuvchilar — {{ selectedStation?.name }}</v-card-title>
         <v-card-text>
-          <v-btn-toggle v-model="txForm.type" color="primary" variant="outlined" rounded="lg" class="mb-3" mandatory>
-            <v-btn value="in">Kirim</v-btn>
-            <v-btn value="out">Chiqim</v-btn>
-          </v-btn-toggle>
-          <v-text-field v-model="txForm.amount" label="Miqdor (L)" type="number" variant="outlined" rounded="lg" class="mb-2" />
-          <v-textarea v-model="txForm.notes" label="Izoh" variant="outlined" rounded="lg" rows="2" />
+          <v-autocomplete v-model="fuelerIds" :items="candidates" item-title="name" item-value="id" label="Quyuvchilar"
+            variant="outlined" rounded="lg" multiple chips closable-chips no-data-text="Yoqilg'i harakati huquqiga ega xodim yo'q" />
+          <div class="text-caption text-medium-emphasis">Biriktirilgan quyuvchi faqat o'z shahobchalarini ko'radi.</div>
         </v-card-text>
         <v-card-actions class="pa-5 pt-0">
           <v-spacer />
-          <v-btn variant="text" @click="txDialog = false">Bekor</v-btn>
-          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving" @click="addTx">Saqlash</v-btn>
+          <v-btn variant="text" @click="fuelersDialog = false">Bekor</v-btn>
+          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving" @click="saveFuelers">Saqlash</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="adjustDialog" max-width="460">
+      <v-card rounded="xl">
+        <v-card-title class="pa-5 pb-2">Inventarizatsiya — {{ selectedStation?.name }}</v-card-title>
+        <v-card-text>
+          <div class="text-body-2 mb-3">Hisob bo'yicha qoldiq: <b>{{ quantity(selectedStation?.current_balance) }} {{ selectedStation?.unit }}</b></div>
+          <v-text-field v-model="adjustForm.actual_balance" type="number" :label="`Haqiqiy qoldiq (${selectedStation?.unit})`" variant="outlined" rounded="lg" />
+          <v-text-field v-model="adjustForm.document_number" label="Akt raqami" variant="outlined" rounded="lg" />
+          <v-textarea v-model="adjustForm.notes" label="Izoh" rows="2" variant="outlined" rounded="lg" />
+          <div class="text-caption text-medium-emphasis">Akt faqat ochiq smena yo'qligida kiritiladi.</div>
+        </v-card-text>
+        <v-card-actions class="pa-5 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="adjustDialog = false">Bekor</v-btn>
+          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving"
+            :disabled="adjustForm.actual_balance === null || adjustForm.actual_balance === '' || !adjustForm.document_number || !adjustForm.notes" @click="saveAdjust">Saqlash</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-snackbar v-model="snack.show" :color="snack.color" timeout="4000">{{ snack.text }}</v-snackbar>
   </v-container>
 </template>

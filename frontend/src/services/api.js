@@ -80,6 +80,7 @@ export const fuelApi = {
   stations: () => api.get('/fuel/stations'),
   createStation: (data) => api.post('/fuel/stations', data),
   updateStation: (id, data) => api.put(`/fuel/stations/${id}`, data),
+  fuelerCandidates: (stationId) => api.get(`/fuel/stations/${stationId}/fueler-candidates`),
   assignFuelers: (stationId, userIds) => api.put(`/fuel/stations/${stationId}/fuelers`, { user_ids: userIds }),
   transactions: (params) => api.get('/fuel/transactions', { params }),
   currentShift: (stationId) => api.get(`/fuel/stations/${stationId}/current-shift`),

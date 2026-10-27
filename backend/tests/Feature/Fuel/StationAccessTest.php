@@ -64,6 +64,20 @@ class StationAccessTest extends TestCase
         $this->getJson('/api/fuel/stations')->assertOk()->assertJsonPath('0.fuelers.0.id', $fueler->id);
     }
 
+    public function test_fueler_candidates_are_operators_of_the_station_organization(): void
+    {
+        $fueler = User::factory()->withRole('fueler')->create(['organization_id' => $this->organization->id, 'name' => 'Quyuvchi']);
+        User::factory()->withRole('viewer')->create(['organization_id' => $this->organization->id]);
+        User::factory()->withRole('fueler')->create(['organization_id' => Organization::factory()->create()->id]);
+        Sanctum::actingAs(User::factory()->withRole('hq_dispatcher')->create(['organization_id' => null]));
+
+        $this->getJson("/api/fuel/stations/{$this->mine->id}/fueler-candidates")
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $fueler->id)
+            ->assertJsonPath('0.name', 'Quyuvchi');
+    }
+
     public function test_fueler_from_another_organization_cannot_be_assigned(): void
     {
         $stranger = User::factory()->withRole('fueler')->create(['organization_id' => Organization::factory()->create()->id]);
