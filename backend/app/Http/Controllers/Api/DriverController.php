@@ -96,7 +96,9 @@ class DriverController extends Controller
             'full_name' => ['string', 'max:255'],
             'license_number' => ['string', 'unique:drivers,license_number,'.$driver->id],
             'license_category' => ['string', 'max:20'],
-            'vehicle_id' => ['nullable', $this->vehicleInOrganization($request->organization_id ?? $driver->organization_id)],
+            'vehicle_id' => ['nullable', $this->vehicleInOrganization(
+                $driver->employee_id !== null ? $driver->organization_id : ($request->organization_id ?? $driver->organization_id),
+            )],
             'work_experience' => ['integer', 'min:0'],
             'pinfl' => ['string', 'size:14', 'unique:drivers,pinfl,'.$driver->id],
             'phone' => ['nullable', 'string', 'max:20'],

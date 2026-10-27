@@ -6,6 +6,7 @@ use App\Models\Driver;
 use App\Models\Employee;
 use App\Models\Organization;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -87,5 +88,19 @@ class DriverEmployeeLinkTest extends TestCase
             ->assertOk()
             ->assertJsonPath('license_category', 'C')
             ->assertJsonPath('pinfl', '12345678901234');
+    }
+
+    public function test_linked_driver_cannot_get_a_vehicle_of_another_organization(): void
+    {
+        $employee = Employee::factory()->create(['organization_id' => $this->organization->id]);
+        $driver = Driver::factory()->create(['organization_id' => $this->organization->id, 'employee_id' => $employee->id]);
+        $other = Organization::factory()->create();
+        $foreignVehicle = Vehicle::factory()->create(['organization_id' => $other->id]);
+
+        $this->putJson("/api/drivers/{$driver->id}", ['organization_id' => $other->id, 'vehicle_id' => $foreignVehicle->id])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('vehicle_id');
+
+        $this->assertNull($driver->fresh()->vehicle_id);
     }
 }
