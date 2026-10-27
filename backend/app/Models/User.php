@@ -7,6 +7,7 @@ use App\Models\Concerns\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -55,6 +56,11 @@ class User extends Authenticatable
     public function approvedWaybills(): HasMany
     {
         return $this->hasMany(Waybill::class, 'approved_by');
+    }
+
+    public function fuelStations(): BelongsToMany
+    {
+        return $this->belongsToMany(FuelStation::class, 'fuel_station_user');
     }
 
     public function role(): BelongsTo

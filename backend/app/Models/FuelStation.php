@@ -7,7 +7,9 @@ use Database\Factories\FuelStationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class FuelStation extends Model
 {
@@ -40,6 +42,29 @@ class FuelStation extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(FuelTransaction::class);
+    }
+
+    public function fuelers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'fuel_station_user');
+    }
+
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(FuelShift::class);
+    }
+
+    public function openShift(): HasOne
+    {
+        return $this->hasOne(FuelShift::class)->where('status', 'open');
+    }
+
+    /**
+     * Unit of the station's fuel: litres or cubic metres.
+     */
+    public function unit(): string
+    {
+        return config("fuel.units.{$this->fuel_type}", 'L');
     }
 
     public function getPercentageAttribute(): float

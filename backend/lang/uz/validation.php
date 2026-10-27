@@ -68,6 +68,7 @@ return [
         'conducted_on' => $today,
         'issued_on' => $today,
         'closed_on' => $today,
+        'document_date' => $today,
     ],
 
     'attributes' => [
@@ -131,6 +132,21 @@ return [
         'type' => 'Turi',
         'vehicle_id' => 'Avtomobil',
         'year' => 'Yil',
+        'actual_balance' => 'Haqiqiy qoldiq',
+        'amount' => 'Miqdor',
+        'capacity' => "Sig'im",
+        'closing_measured' => "Yopilishdagi o'lchov",
+        'discrepancy_note' => 'Farq izohi',
+        'document_amount' => "Hujjat bo'yicha miqdor",
+        'document_number' => 'Hujjat raqami',
+        'fuel_supplier_id' => 'Yetkazib beruvchi',
+        'fuel_type' => "Yoqilg'i turi",
+        'odometer' => "Spidometr ko'rsatkichi",
+        'opening_measured' => "Ochilishdagi o'lchov",
+        'price_per_liter' => 'Narxi',
+        'tank_capacity' => 'Bak hajmi',
+        'tin' => 'STIR',
+        'user_ids' => 'Quyuvchilar',
     ],
 
 ];

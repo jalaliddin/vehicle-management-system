@@ -35,6 +35,8 @@ class Vehicle extends Model
         'fuel_norm',
         'fuel_norm_ac',
         'fuel_type',
+        'tank_capacity',
+        'odometer',
         'status',
         'notes',
     ];
@@ -47,6 +49,8 @@ class Vehicle extends Model
             'full_weight' => 'decimal:2',
             'fuel_norm' => 'decimal:2',
             'fuel_norm_ac' => 'decimal:2',
+            'tank_capacity' => 'decimal:2',
+            'odometer' => 'integer',
         ];
     }
 

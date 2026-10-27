@@ -36,6 +36,7 @@ enum Permission: string
     case FuelView = 'fuel.view';
     case FuelStationsManage = 'fuel.stations.manage';
     case FuelTransactionsCreate = 'fuel.transactions.create';
+    case FuelAdjust = 'fuel.adjust';
     case FuelNormsView = 'fuel_norms.view';
     case FuelNormsManage = 'fuel_norms.manage';
 
@@ -81,6 +82,7 @@ enum Permission: string
             self::FuelView => "Yoqilg'i ma'lumotlarini ko'rish",
             self::FuelStationsManage => 'Shahobchalarni boshqarish',
             self::FuelTransactionsCreate => "Yoqilg'i harakati qo'shish",
+            self::FuelAdjust => "Yoqilg'i inventarizatsiyasi",
             self::FuelNormsView => "Yoqilg'i me'yorlarini ko'rish",
             self::FuelNormsManage => "Yoqilg'i me'yorlarini boshqarish",
             self::ReportsView => "Hisobotlarni ko'rish",
@@ -108,7 +110,7 @@ enum Permission: string
             self::WaybillsView, self::WaybillsCreate, self::WaybillsUpdate, self::WaybillsDelete,
             self::WaybillsSubmit, self::WaybillsMechanicCheck, self::WaybillsDoctorCheck,
             self::WaybillsApprove, self::WaybillsDepart, self::WaybillsComplete => 'waybills',
-            self::FuelView, self::FuelStationsManage, self::FuelTransactionsCreate,
+            self::FuelView, self::FuelStationsManage, self::FuelTransactionsCreate, self::FuelAdjust,
             self::FuelNormsView, self::FuelNormsManage => 'fuel',
             self::ReportsView => 'reports',
             self::EmployeesView, self::EmployeesManage, self::OrgStructureManage => 'hr',
