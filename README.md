@@ -345,17 +345,29 @@ APP_ENV=production
 
 ## 🗄️ Ma'lumotlar bazasi zaxira nusxasi
 
-```bash
-# Zaxira olish
-docker compose exec db mysqldump \
-  -u root -p"${DB_ROOT_PASSWORD}" utg_transport \
-  > backup_$(date +%Y%m%d_%H%M).sql
+`scheduler` konteyneri har kuni soat 02:00 da `php artisan app:backup` buyrug'ini ishga tushiradi:
 
-# Tiklash
-docker compose exec -T db mysql \
-  -u root -p"${DB_ROOT_PASSWORD}" utg_transport \
-  < backup_20260501_1200.sql
+- `db-YYYYmmdd-HHMMSS.sql.gz` — MySQL bazasi (`mysqldump`, gzip);
+- `files-YYYYmmdd-HHMMSS.tar.gz` — yuklangan fayllar (`storage/app/private`: tibbiy xulosalar, xodimlar rasmlari).
+
+Fayllar `backups` Docker volume'ida (`BACKUP_PATH=/backups`) saqlanadi. Oxirgi 30 kunning barcha nusxalari va oxirgi 12 oyning har biridan birinchi nusxa qoladi, qolganlari o'chiriladi (`BACKUP_KEEP_DAILY`, `BACKUP_KEEP_MONTHLY`). Volume'ni alohida diskka ulash tavsiya etiladi.
+
+```bash
+# Qo'lda zaxira olish
+docker compose exec scheduler php artisan app:backup
+
+# Nusxalar ro'yxati
+docker compose exec scheduler ls -lh /backups
+
+# Bazani tiklash (avval tekshiruv bazasiga tiklab ko'ring)
+docker compose exec scheduler sh -c 'gunzip -c /backups/db-20261021-020000.sql.gz' \
+  | docker compose exec -T db mysql -u root -p"${DB_ROOT_PASSWORD}" utg_transport
+
+# Fayllarni tiklash
+docker compose exec scheduler tar -xzf /backups/files-20261021-020000.tar.gz -C /var/www/html/storage/app
 ```
+
+Har chorakda bir marta nusxani alohida bazaga tiklab tekshirib ko'ring.
 
 ---
 

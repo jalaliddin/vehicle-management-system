@@ -83,8 +83,28 @@ services:
     networks:
       - utg_net
 
+  # ── Scheduler (daily backups) ─────────────────────────────────────────────
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: utg_scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    env_file: ./backend/.env.docker
+    volumes:
+      - ./backend:/var/www/html
+      - /var/www/html/vendor
+      - backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - utg_net
+
 volumes:
   db_data:
+  backups:
 
 networks:
   utg_net:

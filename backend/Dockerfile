@@ -13,6 +13,8 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     icu-dev \
     libzip-dev \
+    mysql-client \
+    mariadb-connector-c \
     linux-headers
 
 # PHP extensions
