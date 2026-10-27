@@ -1,3 +1,4 @@
+import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import { md3 } from 'vuetify/blueprints'
 import '@mdi/font/css/materialdesignicons.css'
