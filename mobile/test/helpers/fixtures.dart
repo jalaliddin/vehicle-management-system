@@ -1,6 +1,7 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:utg_transport/data/repositories/auth_repository.dart';
 import 'package:utg_transport/data/repositories/dashboard_repository.dart';
+import 'package:utg_transport/data/repositories/fuel_repository.dart';
 import 'package:utg_transport/data/repositories/reference_repository.dart';
 import 'package:utg_transport/data/repositories/waybill_repository.dart';
 import 'package:utg_transport/data/services/session_storage.dart';
@@ -19,6 +20,8 @@ class MockWaybillRepository extends Mock implements WaybillRepository {}
 class MockDashboardRepository extends Mock implements DashboardRepository {}
 
 class MockReferenceRepository extends Mock implements ReferenceRepository {}
+
+class MockFuelRepository extends Mock implements FuelRepository {}
 
 void registerFallbacks() {
   registerFallbackValue(WaybillStatus.draft);
