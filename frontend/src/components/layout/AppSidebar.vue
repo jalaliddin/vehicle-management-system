@@ -1,11 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter, useLink } from 'vue-router'
+import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const rail = ref(false)
+// Phones and small tablets start with the narrow rail so pages keep their width.
+const rail = ref(useDisplay().smAndDown.value)
 
 const userInitials = computed(() =>
   (authStore.user?.name || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()

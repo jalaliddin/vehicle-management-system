@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useDisplay } from 'vuetify'
 import { fuelApi } from '@/services/api'
 import { errorMessage, label } from '@/utils/hr'
 import { quantity, transactionKinds, unitOf } from '@/utils/fuel'
@@ -19,6 +20,7 @@ const refuelOpen = ref(false)
 const receiptOpen = ref(false)
 const reportOpen = ref(false)
 const busy = ref(false)
+const { xs } = useDisplay()
 
 const station = computed(() => stations.value.find(s => s.id === stationId.value))
 const shift = computed(() => report.value?.shift)
@@ -93,9 +95,10 @@ function printReport() {
   window.print()
 }
 
-function afterReportClosed(open) {
+// The report also opens after closing a shift; reload so the desk shows it closed.
+watch(reportOpen, (open) => {
   if (!open) loadShift()
-}
+})
 
 watch(stationId, () => {
   failure.value = ''
@@ -193,7 +196,7 @@ onMounted(refresh)
     <RefuelSheet v-if="station" v-model="refuelOpen" :station="station" @saved="refresh" />
     <ReceiptSheet v-if="station" v-model="receiptOpen" :station="station" @saved="refresh" />
 
-    <v-dialog v-model="reportOpen" max-width="760" @update:model-value="afterReportClosed">
+    <v-dialog v-model="reportOpen" max-width="760" :fullscreen="xs">
       <v-card v-if="report?.shift" rounded="xl">
         <v-card-text class="pa-5"><ShiftReport :report="report" :unit="unit" /></v-card-text>
         <v-card-actions class="pa-5 pt-0">
