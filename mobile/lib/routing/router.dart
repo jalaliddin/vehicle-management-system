@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 import '../data/repositories/auth_repository.dart';
 import '../ui/features/auth/view_models/login_view_model.dart';
 import '../ui/features/auth/views/login_screen.dart';
+import '../ui/features/fuel/view_models/fuel_desk_view_model.dart';
+import '../ui/features/fuel/views/fuel_desk_screen.dart';
 import '../ui/features/profile/views/profile_screen.dart';
 import '../ui/features/scanner/views/scanner_screen.dart';
+import '../ui/features/shell/shell_destinations.dart';
 import '../ui/features/shell/views/app_shell.dart';
 import '../ui/features/tasks/view_models/tasks_view_model.dart';
 import '../ui/features/tasks/views/tasks_screen.dart';
@@ -25,8 +28,11 @@ GoRouter createRouter(AuthRepository auth) => GoRouter(
   refreshListenable: auth,
   redirect: (context, state) {
     final atLogin = state.matchedLocation == Routes.login;
-    if (!auth.isAuthenticated) return atLogin ? null : Routes.login;
-    if (atLogin) return Routes.tasks;
+    final user = auth.currentUser;
+    if (user == null) return atLogin ? null : Routes.login;
+    if (atLogin || !canVisit(user, state.matchedLocation)) {
+      return homeLocation(user);
+    }
     return null;
   },
   routes: [
@@ -65,6 +71,18 @@ GoRouter createRouter(AuthRepository auth) => GoRouter(
                     WaybillListViewModel(waybillRepository: context.read())
                       ..refresh(),
                 child: const WaybillListScreen(),
+              ),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Routes.fuel,
+              builder: (context, state) => ChangeNotifierProvider(
+                create: (context) =>
+                    FuelDeskViewModel(fuelRepository: context.read())..load(),
+                child: const FuelDeskScreen(),
               ),
             ),
           ],

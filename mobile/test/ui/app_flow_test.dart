@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:utg_transport/data/repositories/auth_repository.dart';
 import 'package:utg_transport/data/repositories/dashboard_repository.dart';
+import 'package:utg_transport/data/repositories/fuel_repository.dart';
 import 'package:utg_transport/data/repositories/reference_repository.dart';
 import 'package:utg_transport/data/repositories/waybill_repository.dart';
 import 'package:utg_transport/data/services/api_client.dart';
@@ -34,7 +35,7 @@ void main() {
     'total': items.length,
   };
 
-  Future<void> pumpApp(WidgetTester tester) async {
+  Future<void> pumpApp(WidgetTester tester, {String role = 'mechanic'}) async {
     requests = [];
     final api = ApiClient(
       baseUrl: 'https://vms.test/api',
@@ -46,7 +47,7 @@ void main() {
         return switch ((request.method, url.path)) {
           ('POST', '/api/auth/login') =>
             jsonDecode(request.body)['password'] == 'password'
-                ? json({'token': 't', 'user': userJson(role: 'mechanic')})
+                ? json({'token': 't', 'user': userJson(role: role)})
                 : json({
                     'message': 'invalid',
                     'errors': {
@@ -63,6 +64,12 @@ void main() {
           ('GET', '/api/waybills/10') => json(
             waybillJson(id: 10, status: WaybillStatus.mechanicCheck),
           ),
+          ('GET', '/api/fuel/stations') => json([fuelStationJson()]),
+          ('GET', '/api/fuel/stations/1/current-shift') => json({
+            'shift': null,
+            'operations': [],
+            'totals': null,
+          }),
           _ => json({'message': 'Not found'}, 404),
         };
       }),
@@ -81,6 +88,7 @@ void main() {
           ),
           Provider(create: (_) => DashboardRepository(apiClient: api)),
           Provider(create: (_) => ReferenceRepository(apiClient: api)),
+          Provider(create: (_) => FuelRepository(apiClient: api)),
         ],
         child: UtgTransportApp(router: createRouter(auth)),
       ),
@@ -149,5 +157,36 @@ void main() {
 
     expect(find.widgetWithText(FilledButton, 'Kirish'), findsOneWidget);
     expect(requests, contains('POST /api/auth/logout'));
+  });
+
+  testWidgets('a fueler lands on the fuel desk without waybill tabs', (
+    tester,
+  ) async {
+    await pumpApp(tester, role: 'fueler');
+
+    await login(tester, 'password');
+
+    expect(find.text('Smena yopiq'), findsOneWidget);
+    expect(find.text("Yoqilg'i"), findsOneWidget);
+    expect(find.text('Profil'), findsOneWidget);
+    expect(find.text('Vazifalar'), findsNothing);
+    expect(find.text('Skaner'), findsNothing);
+    expect(
+      requests.where(
+        (r) => r.contains('/api/waybills') || r.contains('/api/dashboard'),
+      ),
+      isEmpty,
+    );
+  });
+
+  testWidgets('a user with neither waybills nor fuel only sees the profile', (
+    tester,
+  ) async {
+    await pumpApp(tester, role: 'hr');
+
+    await login(tester, 'password');
+
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.widgetWithText(OutlinedButton, 'Chiqish'), findsOneWidget);
   });
 }

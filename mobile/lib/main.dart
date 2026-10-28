@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'config.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/dashboard_repository.dart';
+import 'data/repositories/fuel_repository.dart';
 import 'data/repositories/reference_repository.dart';
 import 'data/repositories/waybill_repository.dart';
 import 'data/services/api_client.dart';
@@ -32,6 +33,7 @@ Future<void> main() async {
         ),
         Provider(create: (_) => DashboardRepository(apiClient: apiClient)),
         Provider(create: (_) => ReferenceRepository(apiClient: apiClient)),
+        Provider(create: (_) => FuelRepository(apiClient: apiClient)),
       ],
       child: UtgTransportApp(router: createRouter(authRepository)),
     ),

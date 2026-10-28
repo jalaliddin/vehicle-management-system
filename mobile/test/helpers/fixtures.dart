@@ -106,6 +106,7 @@ final Map<String, List<String>> systemRolePermissions = {
     'waybills.mechanic_check',
   ],
   'doctor': ['drivers.view', 'waybills.view', 'waybills.doctor_check'],
+  'fueler': ['fuel.view', 'fuel.transactions.create'],
   'viewer': [
     'vehicles.view',
     'drivers.view',
@@ -124,6 +125,7 @@ const systemRoleNames = {
   'mechanic': 'Mexanik',
   'doctor': 'Shifokor',
   'viewer': "Ko'ruvchi",
+  'fueler': "Yoqilg'i quyuvchi",
 };
 
 /// The shape of `/auth/login`'s `user` and of `/auth/me`. [role] is a system
