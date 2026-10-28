@@ -1,3 +1,4 @@
+import 'fuel_station.dart';
 import 'json_parsing.dart';
 
 enum FuelOperationKind {
@@ -80,6 +81,7 @@ class FuelShift {
     required this.isOpen,
     required this.openingBalance,
     required this.openingMeasured,
+    this.unit = 'L',
     this.stationName,
     this.openedAt,
     this.openedBy,
@@ -96,6 +98,7 @@ class FuelShift {
     isOpen: json['status'] == 'open',
     openingBalance: parseDecimal(json['opening_balance']) ?? 0,
     openingMeasured: parseDecimal(json['opening_measured']) ?? 0,
+    unit: fuelUnit(asJsonMap(json['station'])?['fuel_type']),
     stationName: _relationText(json['station'], 'name'),
     openedAt: parseDateTime(json['opened_at']),
     openedBy: _relationText(json['opened_by'], 'name'),
@@ -111,6 +114,9 @@ class FuelShift {
   final bool isOpen;
   final double openingBalance;
   final double openingMeasured;
+
+  /// The station's unit, `L` or `m³`.
+  final String unit;
   final String? stationName;
   final DateTime? openedAt;
   final String? openedBy;

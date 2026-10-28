@@ -8,9 +8,11 @@ import '../ui/features/auth/views/login_screen.dart';
 import '../ui/features/fuel/view_models/fuel_desk_view_model.dart';
 import '../ui/features/fuel/view_models/receipt_view_model.dart';
 import '../ui/features/fuel/view_models/refuel_view_model.dart';
+import '../ui/features/fuel/view_models/shift_report_view_model.dart';
 import '../ui/features/fuel/views/fuel_desk_screen.dart';
 import '../ui/features/fuel/views/receipt_screen.dart';
 import '../ui/features/fuel/views/refuel_screen.dart';
+import '../ui/features/fuel/views/shift_report_screen.dart';
 import '../ui/features/profile/views/profile_screen.dart';
 import '../ui/features/scanner/views/scanner_screen.dart';
 import '../ui/features/shell/shell_destinations.dart';
@@ -157,6 +159,20 @@ GoRouter createRouter(AuthRepository auth) => GoRouter(
           station: state.extra! as FuelStation,
         )..load(),
         child: const ReceiptScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '${Routes.fuel}/shifts/:id',
+      redirect: (context, state) =>
+          int.tryParse(state.pathParameters['id']!) == null
+          ? Routes.fuel
+          : null,
+      builder: (context, state) => ChangeNotifierProvider(
+        create: (context) => ShiftReportViewModel(
+          fuelRepository: context.read(),
+          shiftId: int.parse(state.pathParameters['id']!),
+        )..load(),
+        child: const ShiftReportScreen(),
       ),
     ),
     GoRoute(
