@@ -119,6 +119,15 @@ class FuelShiftTest extends TestCase
         $this->getJson('/api/fuel/shifts?with_discrepancy=1')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.discrepancy', '-10.00');
     }
 
+    public function test_shift_list_accepts_true_for_discrepancy_filter(): void
+    {
+        FuelShift::factory()->closed('3200.00')->create(['fuel_station_id' => $this->station->id, 'opened_by' => $this->fueler->id]);
+        FuelShift::factory()->closed('3190.00', 'Kam')->create(['fuel_station_id' => $this->station->id, 'opened_by' => $this->fueler->id]);
+
+        $this->getJson('/api/fuel/shifts?with_discrepancy=true')->assertOk()->assertJsonPath('total', 1);
+        $this->getJson('/api/fuel/shifts?with_discrepancy=false')->assertOk()->assertJsonPath('total', 2);
+    }
+
     public function test_unassigned_fueler_cannot_open_shift_on_other_station(): void
     {
         $other = FuelStation::factory()->create(['organization_id' => $this->station->organization_id]);

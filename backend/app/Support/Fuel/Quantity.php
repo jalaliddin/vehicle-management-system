@@ -8,6 +8,11 @@ namespace App\Support\Fuel;
 class Quantity
 {
     /**
+     * Largest value a decimal(10,2) quantity column holds; input is validated against it.
+     */
+    public const MAX = '99999999.99';
+
+    /**
      * "33.335" → 3334, 12 → 1200, "0.1" → 10 (half up, two decimals).
      */
     public static function toHundredths(string|int|float $value): int

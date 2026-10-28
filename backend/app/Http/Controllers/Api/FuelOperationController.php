@@ -8,6 +8,7 @@ use App\Models\FuelTransaction;
 use App\Models\Vehicle;
 use App\Models\Waybill;
 use App\Services\Fuel\FuelLedger;
+use App\Support\Fuel\Quantity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -27,9 +28,9 @@ class FuelOperationController extends Controller
             'fuel_supplier_id' => ['required', Rule::exists('fuel_suppliers', 'id')->where('is_active', true)],
             'document_number' => ['required', 'string', 'max:50'],
             'document_date' => ['required', 'date', 'before_or_equal:today'],
-            'document_amount' => ['required', 'numeric', 'min:0.01'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'price_per_liter' => ['nullable', 'numeric', 'min:0'],
+            'document_amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:'.Quantity::MAX],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:'.Quantity::MAX],
+            'price_per_liter' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:999999.99'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -48,7 +49,7 @@ class FuelOperationController extends Controller
                 ->whereNot('status', 'inactive')
                 ->withoutTrashed()],
             'odometer' => ['required', 'integer', 'min:0', 'max:9999999'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:'.Quantity::MAX],
             'driver_id' => ['nullable', Rule::exists('drivers', 'id')->where('organization_id', $station->organization_id)->withoutTrashed()],
             'notes' => ['nullable', 'string'],
         ]);
@@ -74,7 +75,7 @@ class FuelOperationController extends Controller
         Gate::authorize('adjust', $station);
 
         $validated = $request->validate([
-            'actual_balance' => ['required', 'numeric', 'min:0'],
+            'actual_balance' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:'.Quantity::MAX],
             'document_number' => ['required', 'string', 'max:50'],
             'notes' => ['required', 'string', 'max:1000'],
         ]);

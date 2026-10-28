@@ -22,6 +22,7 @@ return [
     'boolean' => ":attribute maydoni ha yoki yo'q bo'lishi kerak.",
     'confirmed' => ':attribute tasdig\'i mos kelmadi.',
     'date' => ":attribute maydonida to'g'ri sana bo'lishi kerak.",
+    'decimal' => ":attribute oddiy son bo'lishi kerak (kasr qismi :decimal xona).",
     'distinct' => ':attribute maydonida takroriy qiymat bor.',
     'email' => ":attribute to'g'ri elektron pochta manzili bo'lishi kerak.",
     'exists' => 'Tanlangan :attribute topilmadi.',

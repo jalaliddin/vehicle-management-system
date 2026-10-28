@@ -177,12 +177,31 @@ class FuelLedger
             $transaction->update(['cancelled_at' => now(), 'cancelled_by' => $by->id, 'cancel_reason' => $reason]);
             $station->update(['current_balance' => Quantity::format($after)]);
 
-            $vehicle = $transaction->vehicle;
+            if ($transaction->kind === FuelTransaction::KIND_REFUEL && $transaction->vehicle_id !== null) {
+                $vehicle = Vehicle::lockForUpdate()->findOrFail($transaction->vehicle_id);
 
-            if ($transaction->kind === FuelTransaction::KIND_REFUEL && $vehicle?->odometer === $transaction->odometer) {
-                $vehicle->update(['odometer' => $transaction->previous_odometer]);
+                if ($vehicle->odometer === $transaction->odometer) {
+                    $vehicle->update(['odometer' => $this->odometerWithout($transaction)]);
+                }
             }
         });
+    }
+
+    /**
+     * The vehicle's reading once a cancelled refuel no longer counts: the one it
+     * replaced, or a refuel still standing at a higher reading.
+     */
+    private function odometerWithout(FuelTransaction $refuel): ?int
+    {
+        $standing = FuelTransaction::active()
+            ->where('kind', FuelTransaction::KIND_REFUEL)
+            ->where('vehicle_id', $refuel->vehicle_id)
+            ->whereKeyNot($refuel->id)
+            ->max('odometer');
+
+        $readings = array_filter([$refuel->previous_odometer, $standing], fn ($reading) => $reading !== null);
+
+        return $readings ? (int) max($readings) : null;
     }
 
     /**

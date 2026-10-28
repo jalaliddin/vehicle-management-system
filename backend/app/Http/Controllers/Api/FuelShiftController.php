@@ -24,7 +24,7 @@ class FuelShiftController extends Controller
             'station_id' => ['nullable', 'integer'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
-            'with_discrepancy' => ['nullable', 'boolean'],
+            'with_discrepancy' => ['nullable', 'in:0,1,true,false'],
         ]);
 
         $shifts = FuelShift::with(['station:id,name,fuel_type', 'openedBy:id,name', 'closedBy:id,name'])
@@ -53,7 +53,7 @@ class FuelShiftController extends Controller
     {
         Gate::authorize('operate', $station);
 
-        $validated = $request->validate(['opening_measured' => ['required', 'numeric', 'min:0']]);
+        $validated = $request->validate(['opening_measured' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:'.Quantity::MAX]]);
 
         $shift = $this->ledger->openShift($station, $validated['opening_measured'], $request->user());
 
@@ -65,7 +65,7 @@ class FuelShiftController extends Controller
         Gate::authorize('operate', $shift->station);
 
         $validated = $request->validate([
-            'closing_measured' => ['required', 'numeric', 'min:0'],
+            'closing_measured' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:'.Quantity::MAX],
             'discrepancy_note' => ['nullable', 'string', 'max:1000'],
         ]);
 

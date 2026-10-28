@@ -216,6 +216,33 @@ class FuelOperationTest extends TestCase
         $this->assertSame(15500, $this->vehicle->fresh()->odometer);
     }
 
+    public function test_cancelling_a_duplicate_refuel_keeps_the_remaining_reading(): void
+    {
+        $this->openShift();
+        $mistyped = $this->refuel(['odometer' => 15250, 'amount' => 40])->json('id');
+        $this->refuel(['odometer' => 15250, 'amount' => 30])->assertCreated();
+
+        $this->postJson("/api/fuel/transactions/{$mistyped}/cancel", ['reason' => 'Miqdor xato'])->assertOk();
+
+        $this->assertSame(15250, $this->vehicle->fresh()->odometer);
+        $this->refuel(['odometer' => 15100, 'amount' => 5])->assertUnprocessable()->assertJsonValidationErrors('odometer');
+    }
+
+    public function test_quantities_must_be_plain_decimals_within_column_range(): void
+    {
+        $shiftId = $this->openShift();
+        app()->setLocale('uz');
+
+        $this->refuel(['amount' => '1.5e2'])->assertUnprocessable()
+            ->assertJsonValidationErrors(['amount' => "Miqdor oddiy son bo'lishi kerak (kasr qismi 0-2 xona)."]);
+        $this->receipt(['amount' => 1e17])->assertUnprocessable()->assertJsonValidationErrors('amount');
+        $this->receipt(['document_amount' => '100000000', 'price_per_liter' => '1e3'])->assertUnprocessable()
+            ->assertJsonValidationErrors(['document_amount', 'price_per_liter']);
+        $this->postJson("/api/fuel/shifts/{$shiftId}/close", ['closing_measured' => '5e3'])->assertUnprocessable()
+            ->assertJsonValidationErrors('closing_measured');
+        $this->assertSame('5000.00', $this->station->fresh()->current_balance);
+    }
+
     public function test_cancel_after_shift_close_is_rejected(): void
     {
         $shiftId = $this->openShift();
