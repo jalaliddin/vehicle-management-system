@@ -21,7 +21,8 @@
       "Bash(php --version)",
       "Bash(chmod +x /home/eversoft/Projects/vms.utg.uz/deploy.sh)",
       "Bash(vendor/bin/pint app/Http/Controllers/Api/UserController.php --format agent)",
-      "Bash(vendor/bin/pint app/Http/Controllers/Api/WaybillController.php --format agent)"
+      "Bash(vendor/bin/pint app/Http/Controllers/Api/WaybillController.php --format agent)",
+      "Bash(docker compose *)"
     ]
   }
 }
