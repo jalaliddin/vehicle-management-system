@@ -209,3 +209,99 @@ DashboardStats statsWith({List<Waybill> activeTrips = const []}) =>
       fuelAlerts: const [],
       activeTrips: activeTrips,
     );
+
+/// The shape of a `/fuel/stations` item.
+Map<String, dynamic> fuelStationJson({
+  int id = 1,
+  String fuelType = 'benzin',
+  String balance = '3200.00',
+}) => {
+  'id': id,
+  'organization_id': 3,
+  'name': 'QQP-MGQB ${fuelTypeLabel(fuelType)}',
+  'fuel_type': fuelType,
+  'capacity': '10000.00',
+  'current_balance': balance,
+  'min_threshold': '1000.00',
+  'percentage': 32.0,
+  'unit': fuelType == 'gaz' ? 'm³' : 'L',
+  'fuelers': const [],
+};
+
+/// An operation inside a shift report.
+Map<String, dynamic> fuelOperationJson({
+  int id = 1,
+  String kind = 'refuel',
+  String amount = '40.00',
+  bool cancelled = false,
+}) => {
+  'id': id,
+  'fuel_station_id': 1,
+  'kind': kind,
+  'type': kind == 'refuel' ? 'out' : 'in',
+  'amount': amount,
+  'odometer': kind == 'refuel' ? 125200 : null,
+  'document_number': kind == 'receipt' ? 'TTN-001' : null,
+  'created_at': '2026-10-28T09:17:30.000000Z',
+  'cancelled_at': cancelled ? '2026-10-28T09:20:00.000000Z' : null,
+  'cancel_reason': cancelled ? "Noto'g'ri avtomobil" : null,
+  'vehicle': kind == 'refuel'
+      ? {'id': 5, 'state_number': '01A001AA', 'model': 'Toyota Camry'}
+      : null,
+  'driver': kind == 'refuel' ? {'id': 7, 'full_name': 'Aliyev Vali'} : null,
+  'supplier': kind == 'receipt' ? {'id': 1, 'name': 'UzGazOil'} : null,
+  'waybill': kind == 'refuel'
+      ? {'id': 10, 'waybill_number': 'UTG-202610-0001'}
+      : null,
+};
+
+/// The `{shift, operations, totals}` shape of current-shift and shift show.
+Map<String, dynamic> shiftReportJson({
+  bool open = true,
+  List<Map<String, dynamic>> operations = const [],
+}) => {
+  'shift': {
+    'id': 4,
+    'fuel_station_id': 1,
+    'status': open ? 'open' : 'closed',
+    'opened_at': '2026-10-28T09:00:00.000000Z',
+    'opening_balance': '3200.00',
+    'opening_measured': '3200.00',
+    'closed_at': open ? null : '2026-10-28T18:00:00.000000Z',
+    'closing_balance': open ? null : '4160.00',
+    'closing_measured': open ? null : '4159.50',
+    'discrepancy': open ? null : '-0.50',
+    'discrepancy_note': open ? null : "O'lchovdagi xatolik",
+    'station': {'id': 1, 'name': 'QQP-MGQB Benzin', 'fuel_type': 'benzin'},
+    'opened_by': {'id': 9, 'name': 'Quyuvchi Test'},
+    'closed_by': open ? null : {'id': 9, 'name': 'Quyuvchi Test'},
+  },
+  'operations': operations,
+  'totals': {'receipts': '0.00', 'refuels': '40.00'},
+};
+
+/// The shape of a `/fuel/stations/{id}/vehicles` item.
+Map<String, dynamic> fuelVehicleJson({
+  int id = 5,
+  String stateNumber = '01A001AA',
+  bool matches = true,
+  String? waybill = 'UTG-202610-0001',
+}) => {
+  'id': id,
+  'state_number': stateNumber,
+  'model': 'Toyota Camry',
+  'fuel_type': matches ? 'benzin' : 'dizel',
+  'fuel_type_matches': matches,
+  'tank_capacity': '60.00',
+  'odometer': 125000,
+  'driver': {'id': 7, 'full_name': 'Aliyev Vali'},
+  'waybill': waybill == null ? null : {'id': 10, 'waybill_number': waybill},
+};
+
+Map<String, dynamic> fuelSupplierJson({int id = 1, bool active = true}) => {
+  'id': id,
+  'name': active ? 'UzGazOil' : 'Eski yetkazuvchi',
+  'tin': '123456789',
+  'phone': null,
+  'is_active': active,
+};

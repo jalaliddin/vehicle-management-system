@@ -1,3 +1,5 @@
+import '../../domain/models/quantity.dart';
+
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
 String formatDate(DateTime? date) => date == null
@@ -21,4 +23,17 @@ String formatAmount(double? value, [String unit = '']) {
 double? parseAmount(String text) {
   final normalized = text.trim().replaceAll(',', '.');
   return normalized.isEmpty ? null : double.tryParse(normalized);
+}
+
+/// Fuel quantities: two decimals, thousands grouped with a space.
+String formatQuantity(double? value, [String unit = '']) {
+  if (value == null) return '—';
+  final [whole, fraction] = value.abs().toStringAsFixed(2).split('.');
+  final grouped = whole.replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+$)'),
+    (_) => ' ',
+  );
+  final sign = toHundredths(value) < 0 ? '-' : '';
+  final text = '$sign$grouped.$fraction';
+  return unit.isEmpty ? text : '$text $unit';
 }
