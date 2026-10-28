@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../data/repositories/auth_repository.dart';
 import '../ui/features/auth/view_models/login_view_model.dart';
+import '../domain/models/fuel_station.dart';
 import '../ui/features/auth/views/login_screen.dart';
 import '../ui/features/fuel/view_models/fuel_desk_view_model.dart';
+import '../ui/features/fuel/view_models/refuel_view_model.dart';
 import '../ui/features/fuel/views/fuel_desk_screen.dart';
+import '../ui/features/fuel/views/refuel_screen.dart';
 import '../ui/features/profile/views/profile_screen.dart';
 import '../ui/features/scanner/views/scanner_screen.dart';
 import '../ui/features/shell/shell_destinations.dart';
@@ -127,6 +130,24 @@ GoRouter createRouter(AuthRepository auth) => GoRouter(
     GoRoute(
       path: Routes.scanner,
       builder: (context, state) => const ScannerScreen(),
+    ),
+    // Fuel forms get their station from the desk; opened any other way
+    // they have none, so they fall back to the desk.
+    GoRoute(
+      path: Routes.fuelRefuel,
+      redirect: (context, state) =>
+          state.extra is FuelStation ? null : Routes.fuel,
+      builder: (context, state) => ChangeNotifierProvider(
+        create: (context) => RefuelViewModel(
+          fuelRepository: context.read(),
+          station: state.extra! as FuelStation,
+        )..search(''),
+        child: const RefuelScreen(),
+      ),
+    ),
+    GoRoute(
+      path: Routes.fuelScan,
+      builder: (context, state) => const ScannerScreen(pickWaybill: true),
     ),
   ],
 );

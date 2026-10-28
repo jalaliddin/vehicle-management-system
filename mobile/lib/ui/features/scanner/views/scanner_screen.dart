@@ -5,9 +5,12 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../domain/models/waybill_link.dart';
 import '../../../../routing/routes.dart';
 
-/// Scans the QR code printed on a waybill and opens it.
+/// Scans the QR code printed on a waybill and opens it, or, with
+/// [pickWaybill], pops the waybill id to the screen that asked for it.
 class ScannerScreen extends StatefulWidget {
-  const ScannerScreen({super.key});
+  const ScannerScreen({super.key, this.pickWaybill = false});
+
+  final bool pickWaybill;
 
   @override
   State<ScannerScreen> createState() => _ScannerScreenState();
@@ -41,7 +44,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
     _opening = true;
     await _controller.stop();
     if (!mounted) return;
-    context.pushReplacement(Routes.waybill(id));
+    if (widget.pickWaybill) {
+      context.pop(id);
+    } else {
+      context.pushReplacement(Routes.waybill(id));
+    }
   }
 
   @override
