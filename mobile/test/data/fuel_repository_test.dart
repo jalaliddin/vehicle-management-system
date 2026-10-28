@@ -166,6 +166,9 @@ void main() {
     });
 
     test('picks the exact state number', () async {
+      routes['GET /api/waybills/10/public'] = (_) => json({
+        'vehicle': {'state_number': '01A001AA'},
+      });
       routes['GET /api/fuel/stations/1/vehicles'] = (request) => json([
         fuelVehicleJson(id: 6, stateNumber: '01A001AB'),
         fuelVehicleJson(id: 5, stateNumber: '01A001AA'),
@@ -174,11 +177,29 @@ void main() {
       final vehicle = await fuel.vehicleFromWaybill(1, 10);
 
       expect(vehicle?.id, 5);
-      expect(
-        sent.last.url.queryParameters['search'],
-        '01A001AA',
-        reason: 'searches by the normalized number',
-      );
+      expect(sent.last.url.queryParameters['search'], '01A001AA');
+    });
+
+    test('finds plates stored with spaces', () async {
+      routes['GET /api/waybills/10/public'] = (_) => json({
+        'vehicle': {'state_number': '01 A 001 AA'},
+      });
+      // The server matches `state_number LIKE %search%` as stored.
+      routes['GET /api/fuel/stations/1/vehicles'] = (request) {
+        final search = request.url.queryParameters['search'] ?? '';
+        return json([
+          for (final plate in ['01 A 001 AA', '01 A 001 AB'])
+            if (plate.contains(search))
+              fuelVehicleJson(
+                id: plate.endsWith('AA') ? 5 : 6,
+                stateNumber: plate,
+              ),
+        ]);
+      };
+
+      final vehicle = await fuel.vehicleFromWaybill(1, 10);
+
+      expect(vehicle?.id, 5);
     });
 
     test('returns null when the station has no such vehicle', () async {

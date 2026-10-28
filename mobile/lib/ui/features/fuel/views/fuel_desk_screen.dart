@@ -100,9 +100,25 @@ class _FuelDeskScreenState extends State<FuelDeskScreen> {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: shift == null
-                ? _buildClosedShift(viewModel, station)
-                : _buildOpenShift(viewModel, station, shift),
+            child: switch (shift) {
+              // Without the shift's state, "closed" would be a guess.
+              null when viewModel.report == null =>
+                viewModel.loadError == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
+                        children: [
+                          const Text("Smena holatini yuklab bo'lmadi"),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: viewModel.load,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Qayta urinish'),
+                          ),
+                        ],
+                      ),
+              null => _buildClosedShift(viewModel, station),
+              final shift => _buildOpenShift(viewModel, station, shift),
+            },
           ),
         ),
         if (shift != null) ...[

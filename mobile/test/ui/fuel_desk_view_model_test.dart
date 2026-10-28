@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:utg_transport/data/services/api_exception.dart';
@@ -195,6 +197,36 @@ void main() {
       expect(await viewModel.openShift('3200'), isFalse);
       expect(viewModel.actionError, 'Bu shahobchada ochiq smena bor');
       expect(viewModel.fieldErrors, isEmpty);
+    },
+  );
+
+  test(
+    'a slow answer for the previous station does not land on the new one',
+    () async {
+      final stations = [
+        FuelStation.fromJson(fuelStationJson()),
+        FuelStation.fromJson(fuelStationJson(id: 2, fuelType: 'dizel')),
+      ];
+      when(() => fuel.stations()).thenAnswer((_) async => stations);
+      final otherShift = shiftReportJson();
+      (otherShift['shift'] as Map<String, dynamic>)['id'] = 7;
+      when(() => fuel.currentShift(2))
+          .thenAnswer((_) async => ShiftReport.fromJson(otherShift));
+      await viewModel.load();
+
+      final slow = Completer<ShiftReport>();
+      when(() => fuel.currentShift(1)).thenAnswer((_) => slow.future);
+      final refresh = viewModel.load();
+      // Let the refresh get its stations and wait for station 1's shift.
+      await Future<void>.delayed(Duration.zero);
+      verify(() => fuel.currentShift(1)).called(2);
+      await viewModel.selectStation(2);
+      slow.complete(report());
+      await refresh;
+
+      expect(viewModel.station?.id, 2);
+      expect(viewModel.report?.shift?.id, 7);
+      expect(viewModel.loading, isFalse);
     },
   );
 }

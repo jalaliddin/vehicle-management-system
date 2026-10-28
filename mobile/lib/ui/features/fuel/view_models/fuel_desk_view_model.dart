@@ -25,6 +25,7 @@ class FuelDeskViewModel extends ViewModel {
   Map<String, String> _fieldErrors = const {};
   bool _closing = false;
   bool _noteRejected = false;
+  int _lastLoad = 0;
 
   List<FuelStation> get stations => _stations;
   FuelStation? get station => _station;
@@ -40,23 +41,35 @@ class FuelDeskViewModel extends ViewModel {
   /// True only once the server has answered with an empty station list.
   bool get noStations => _loaded && _loadError == null && _stations.isEmpty;
 
+  /// Answers to an older load are dropped once a newer one has started, so
+  /// a slow reply for one station never lands on another.
   Future<void> load() async {
+    final current = ++_lastLoad;
     _loading = true;
     _loadError = null;
     notifyListeners();
     try {
-      _stations = await _fuel.stations();
+      final stations = await _fuel.stations();
+      if (current != _lastLoad) return;
+      _stations = stations;
       _station =
-          _stations.where((s) => s.id == _station?.id).firstOrNull ??
-          _stations.firstOrNull;
+          stations.where((s) => s.id == _station?.id).firstOrNull ??
+          stations.firstOrNull;
       final station = _station;
-      _report = station == null ? null : await _fuel.currentShift(station.id);
+      final report = station == null
+          ? null
+          : await _fuel.currentShift(station.id);
+      if (current != _lastLoad) return;
+      _report = report;
       _loaded = true;
     } on ApiException catch (e) {
+      if (current != _lastLoad) return;
       _loadError = e.message;
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (current == _lastLoad) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 

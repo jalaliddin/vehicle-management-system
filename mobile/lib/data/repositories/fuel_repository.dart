@@ -57,8 +57,10 @@ class FuelRepository {
     final stateNumber = asJsonMap(waybill?['vehicle'])?['state_number'];
     if (stateNumber is! String || stateNumber.trim().isEmpty) return null;
 
+    // The server matches the number as stored, spaces included; compare
+    // the results without spaces and case.
     final wanted = _plateKey(stateNumber);
-    final candidates = await vehicles(stationId, wanted);
+    final candidates = await vehicles(stationId, stateNumber);
     return candidates
         .where((vehicle) => _plateKey(vehicle.stateNumber) == wanted)
         .firstOrNull;
